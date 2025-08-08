@@ -1,0 +1,8 @@
+// 1.21.1	2025-08-07T20:01:28.520566	Loot Tables
+5c8e2e9c3871af51d08803b9d0e00545e351a50c data/golfwithmates/loot_table/blocks/astellis_block.json
+8fe0c8695e4c5fcb9e7e6c83ac336ad723d17faf data/golfwithmates/loot_table/blocks/golf_ball.json
+eff27e8b5ddbdf8216eee98cda3569c50dd9897d data/golfwithmates/loot_table/blocks/golf_cup.json
+500626581803b45eb84a45403c7e064e3b186bb5 data/golfwithmates/loot_table/blocks/golf_flag.json
+1bb5887b8f79180ce5431c80bcff57a4de3aab72 data/golfwithmates/loot_table/blocks/golf_flag_pole.json
+9f98126319a5f6cf1a22950dbb337a91f489fd75 data/golfwithmates/loot_table/blocks/golf_greenzone.json
+2e107fd98080c0047c480cc48fd81c25bd57ff60 data/golfwithmates/loot_table/blocks/golf_hole.json

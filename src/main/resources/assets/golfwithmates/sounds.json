@@ -1,0 +1,26 @@
+{
+  "golf_putt": {
+    "subtitle": "sounds.golfwithmates.golf_putt",
+    "sounds": [
+      "golfwithmates:golf_putt"
+    ]
+  },
+  "golf_score": {
+    "subtitle": "sounds.golfwithmates.golf_score",
+    "sounds": [
+      "golfwithmates:golf_score"
+    ]
+  },
+  "golf_power_up": {
+    "subtitle": "sounds.golfwithmates.golf_power_up",
+    "sounds": [
+      "golfwithmates:golf_power_up"
+    ]
+  },
+  "golf_power_down": {
+    "subtitle": "sounds.golfwithmates.golf_power_down",
+    "sounds": [
+      "golfwithmates:golf_power_down"
+    ]
+  }
+}

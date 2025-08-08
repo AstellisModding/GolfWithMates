@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "golfwithmates:block/golf_flag"
+    },
+    "facing=south": {
+      "model": "golfwithmates:block/golf_flag",
+      "y": 180
+    },
+    "facing=east": {
+      "model": "golfwithmates:block/golf_flag",
+      "y": 90
+    },
+    "facing=west": {
+      "model": "golfwithmates:block/golf_flag",
+      "y": 270
+    }
+  }
+}

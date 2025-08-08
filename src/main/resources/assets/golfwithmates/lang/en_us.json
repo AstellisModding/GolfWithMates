@@ -1,0 +1,25 @@
+{
+  "item.golfwithmates.poles_bag": "Poles Bag",
+  "item.golfwithmates.cup_of_joe": "Cup Of Joe",
+  "item.golfwithmates.golf_club_putter": "Putter Club",
+
+
+  "block.golfwithmates.astellis_block": "Astellis's Block",
+  "block.golfwithmates.golf_greenzone": "Golf Green Zone",
+  "block.golfwithmates.golf_ball": "Golf Ball",
+  "block.golfwithmates.golf_flag": "Golf Flag",
+  "block.golfwithmates.golf_flag_pole": "Golf Flag Pole",
+  "block.golfwithmates.golf_hole": "Golf Hole",
+  "block.golfwithmates.golf_cup": "Golf Cup",
+
+  "key.golfwithmates.golfpowerup": "Golf Increase Power",
+  "key.golfwithmates.golfpowerdown": "Golf Decrease Power",
+
+  "key.categories.golfwithmates.golf": "Lets Go Golfing!",
+  "message.golfwithmates.testkeyaffirmation": "PRESSED!!!",
+
+
+  "creativetab.golfwithmates.golfwithmates_items": "Golf With Mates!",
+
+  "tooltip.golfwithmates.golf_club_putter.tooltip": "Putt your balls away."
+}

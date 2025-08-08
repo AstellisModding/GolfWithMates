@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "B": {
+      "item": "minecraft:paper"
+    }
+  },
+  "pattern": [
+    "   ",
+    "B B",
+    " B "
+  ],
+  "result": {
+    "count": 1,
+    "id": "golfwithmates:astellis_block"
+  }
+}
