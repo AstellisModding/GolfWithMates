@@ -1,13 +1,10 @@
 package net.astellismodding.golfwithmates.block.custom;
 
 import com.mojang.serialization.MapCodec;
-import net.astellismodding.golfwithmates.block.entity.GolfCupBlockEntity;
 import net.astellismodding.golfwithmates.component.ModDataComponent;
 import net.astellismodding.golfwithmates.sound.ModSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.network.chat.Component;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
@@ -19,7 +16,6 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.FallingBlock;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.border.WorldBorder;
@@ -34,9 +30,6 @@ public class GolfBallBlock extends FallingBlock {
 
     private static final DirectionProperty PuttDirection = null;
     private static final VoxelShape CustomBoundingBox = Block.box(5, 0, 5, 11,5,11);
-    Component comp1 = Component.nullToEmpty("Putt");
-    Component comp2 = Component.nullToEmpty("Putt");
-    Component comp3 = Component.nullToEmpty("Putt");
     int blockX = 0;
     int blockZ = 0;
     int blockY = 0;
@@ -59,9 +52,8 @@ public class GolfBallBlock extends FallingBlock {
         return CustomBoundingBox;
     }
 
-    //todo Add logic for rebounds
-    //todo Add admin, partical trace or maybe entity ?
-    //todo send ball to the sotrage made in the cup
+    //todo Feat: Add logic for rebounds
+    //todo Feat: Add partical trace or maybe entity, visual of ball moving ?
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
         if (isClub(new ItemStack(player.getMainHandItem().getItem()))){
@@ -139,7 +131,7 @@ public class GolfBallBlock extends FallingBlock {
         Block CupBlock = level.getBlockState(cuppos).getBlock();
         ItemStack item = new ItemStack(this.asItem());
         Boolean wasInserted = false;
-        //todo once block entity is setup for Ball you need to use the GetCloneItemStack method to copy the data across
+        //todo Feat: once block entity is setup for Ball you need to use the GetCloneItemStack method to copy the data across
         if (CupBlock instanceof GolfCupBlock) {
             wasInserted = ((GolfCupBlock) CupBlock).InsertBall(item, context, level);
         }
@@ -149,7 +141,6 @@ public class GolfBallBlock extends FallingBlock {
         }
         level.removeBlock(context, false);
     }
-
 
     public boolean CheckHole(BlockPos context, Level level) {
         BlockPos postion = context.below();
