@@ -2,10 +2,13 @@ package net.astellismodding.golfwithmates.event;
 
 import net.astellismodding.golfwithmates.GolfWithMates;
 import net.astellismodding.golfwithmates.network.PuttPowerPayload;
-import net.astellismodding.golfwithmates.sound.ModSounds;
+import net.astellismodding.golfwithmates.network.StrokePowerPayload;
+import net.astellismodding.golfwithmates.render.CScrollIncrementer;
 import net.astellismodding.golfwithmates.util.ModKeyMappings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.PacketUtils;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -13,11 +16,15 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.client.event.InputEvent.MouseScrollingEvent;
 
 @Mod(value = GolfWithMates.MOD_ID, dist = Dist.CLIENT)
 public class ClientEvents {
     @EventBusSubscriber(modid = GolfWithMates.MOD_ID, value = Dist.CLIENT)
     public static class ClientNeoForgeEvents {
+
+        private static final Minecraft minecraft = Minecraft.getInstance();
+        private static final CScrollIncrementer scrollIncrementer = new CScrollIncrementer(true);
 
         private static final Component TESTER_COMP =
                 Component.translatable("message."+ GolfWithMates.MOD_ID+".testkeyaffirmation");
@@ -31,7 +38,6 @@ public class ClientEvents {
 
         @SubscribeEvent
         public static void onKeyInput(ClientTickEvent.Post event){
-            Minecraft minecraft = Minecraft.getInstance();
             while (ModKeyMappings.Golf_PowerUP.get().consumeClick() && minecraft.player != null){
                 //minecraft.player.displayClientMessage(TESTER_COMP, true);
                 PacketDistributor.sendToServer(new PuttPowerPayload(1));
@@ -45,6 +51,23 @@ public class ClientEvents {
 
             }
         }
+
+        @SubscribeEvent
+        public static void onMouseEvent(MouseScrollingEvent event) {
+            if (minecraft.player != null && minecraft.player.isShiftKeyDown()) {
+                double delta = event.getScrollDeltaY();
+                //todo add check for the golf club
+                if (delta != 0) {
+                    int shift = scrollIncrementer.scroll(delta);
+                    if (shift != 0) {
+                        PacketDistributor.sendToServer(new StrokePowerPayload(shift));
+                    }
+                    event.setCanceled(true);
+                }
+            }
+        }
     }
+
+
 
 }
