@@ -21,13 +21,13 @@ public class ModItemDataComponents {
     // Codec for saving the PutterPower to disk (persistent)
     public static final Codec<PutterPower> PUTTER_POWER_CODEC = RecordCodecBuilder.create(instance ->
             instance.group(
-                    Codec.INT.fieldOf("level").forGetter(PutterPower::level)
+                    Codec.DOUBLE.fieldOf("level").forGetter(PutterPower::level)
             ).apply(instance, PutterPower::new)
     );
 
     // StreamCodec for sending the PutterPower over the network
     public static final StreamCodec<ByteBuf, PutterPower> PUTTER_POWER_STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.VAR_INT, PutterPower::level,
+            ByteBufCodecs.DOUBLE, PutterPower::level,
             PutterPower::new
     );
 

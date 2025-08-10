@@ -30,7 +30,7 @@ public record PuttPowerPayload(int direction) implements CustomPacketPayload {
     }
 
     public static void handlePayload(PuttPowerPayload payload, IPayloadContext context) {
-        int xvar = 0;
+        double xvar = 0;
         Player player = context.player();
         ItemStack stack = player.getMainHandItem();
         if (isClub(new ItemStack(player.getMainHandItem().getItem()))) {

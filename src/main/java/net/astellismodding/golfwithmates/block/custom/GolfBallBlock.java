@@ -159,9 +159,9 @@ public class GolfBallBlock extends FallingBlock {
         }
         return false;
     }
-
-    public Vec3 CalculateHitResultLocation(float x, float z, float r, float v, int driveType) {
-        float power = v * driveType;
+    //todo Fix:When putting towards negative x or y, distance issues
+    public Vec3 CalculateHitResultLocation(float x, float z, float r, double v, int driveType) {
+        double power = 16 * v * driveType;
         float rot = r;
 
         double angleRadians = Math.toRadians(rot);
