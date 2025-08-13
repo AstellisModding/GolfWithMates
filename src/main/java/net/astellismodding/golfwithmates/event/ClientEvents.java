@@ -1,6 +1,8 @@
 package net.astellismodding.golfwithmates.event;
 
 import net.astellismodding.golfwithmates.GolfWithMates;
+import net.astellismodding.golfwithmates.block.entity.renderer.GolfCupBlockEntityRenderer;
+import net.astellismodding.golfwithmates.init.ModBlockEntities;
 import net.astellismodding.golfwithmates.network.PuttPowerPayload;
 import net.astellismodding.golfwithmates.network.StrokePowerPayload;
 import net.astellismodding.golfwithmates.render.CScrollIncrementer;
@@ -14,6 +16,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.client.event.InputEvent.MouseScrollingEvent;
@@ -66,6 +69,22 @@ public class ClientEvents {
                 }
             }
         }
+
+        @SubscribeEvent
+        public static void registerBER(EntityRenderersEvent.RegisterRenderers event) {
+            event.registerBlockEntityRenderer(
+                    ModBlockEntities.GOLF_CLUP_BE.get(),
+                    GolfCupBlockEntityRenderer::new
+            );
+        }
+
+
+
+
+
+
+
+
     }
 
 

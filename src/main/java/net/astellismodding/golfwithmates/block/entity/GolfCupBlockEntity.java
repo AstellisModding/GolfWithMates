@@ -35,6 +35,17 @@ public class GolfCupBlockEntity extends BlockEntity {
         }
     };
 
+    private float rotation;
+
+    public float getRenderingRotation() {
+        rotation += 0.18f;
+        if(rotation>=360){
+            rotation = 0;
+        }
+        return rotation;
+    }
+
+
     public GolfCupBlockEntity(BlockPos pos, BlockState blockState) {
         super(ModBlockEntities.GOLF_CLUP_BE.get(), pos, blockState);
     }
