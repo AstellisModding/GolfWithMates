@@ -67,14 +67,15 @@ public class GolfCupBlock extends BaseEntityBlock {
         GolfCupBlockEntity targetEntity = (GolfCupBlockEntity) level.getBlockEntity(pos);
 
         if(targetEntity != null) {
-            //Give the ball
+            /*Give the ball -- Blocked out because we dont need to manually put things into the hole...
             if(targetEntity.inventory.getStackInSlot(0).isEmpty() && !stack.isEmpty()) {
                 targetEntity.inventory.insertItem(0, stack.copy(), false);
                 stack.shrink(1);
                 level.playSound(player, pos, SoundEvents.ITEM_PICKUP, SoundSource.BLOCKS, 1f, 2f);
-
+             }
+            */
             //Take the ball
-            } else if(!targetEntity.inventory.getStackInSlot(0).isEmpty()) {
+            if(!targetEntity.inventory.getStackInSlot(0).isEmpty()) {
 
                 ItemStack CupItem = targetEntity.inventory.getStackInSlot(0);
                 ItemStack HandItem = player.getMainHandItem();
