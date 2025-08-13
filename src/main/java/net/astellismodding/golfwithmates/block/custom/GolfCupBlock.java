@@ -24,9 +24,6 @@ public class GolfCupBlock extends BaseEntityBlock {
         super(properties);
     }
 
-    //todo add entity renderer so ball can be viewed
-    //todo allow ball to stack onto another ball
-
     @Override
     protected MapCodec<? extends BaseEntityBlock> codec() {
         return CODEC;
