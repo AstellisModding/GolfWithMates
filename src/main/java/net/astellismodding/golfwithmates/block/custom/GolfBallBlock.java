@@ -53,7 +53,7 @@ public class GolfBallBlock extends FallingBlock {
     }
 
     //todo Feat: Add logic for rebounds
-    //todo Feat: Add partical trace or maybe entity, visual of ball moving ?
+    //todo Feat: Add partical trace or maybe entity, visual of ball moving?
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
         if (isClub(new ItemStack(player.getMainHandItem().getItem()))){
@@ -150,6 +150,7 @@ public class GolfBallBlock extends FallingBlock {
         }
         return false;
     }
+
     //todo Fix:When putting towards negative x or y, distance issues
     public Vec3 CalculateHitResultLocation(float x, float z, float r, double v, int driveType) {
         double power = 16 * v * driveType;

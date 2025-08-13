@@ -3,6 +3,7 @@ package net.astellismodding.golfwithmates.block.custom;
 import com.mojang.serialization.MapCodec;
 import net.astellismodding.golfwithmates.block.entity.GolfCupBlockEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -24,6 +25,7 @@ public class GolfCupBlock extends BaseEntityBlock {
     }
 
     //todo add entity renderer so ball can be viewed
+    //todo allow ball to stack onto another ball
 
     @Override
     protected MapCodec<? extends BaseEntityBlock> codec() {
@@ -64,19 +66,31 @@ public class GolfCupBlock extends BaseEntityBlock {
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
                                               Player player, InteractionHand hand, BlockHitResult hitResult) {
-        if(level.getBlockEntity(pos) instanceof GolfCupBlockEntity golfCupBlockEntity) {
-            if(golfCupBlockEntity.inventory.getStackInSlot(0).isEmpty() && !stack.isEmpty()) {
-                golfCupBlockEntity.inventory.insertItem(0, stack.copy(), false);
+
+        GolfCupBlockEntity targetEntity = (GolfCupBlockEntity) level.getBlockEntity(pos);
+
+        if(targetEntity != null) {
+            if(targetEntity.inventory.getStackInSlot(0).isEmpty() && !stack.isEmpty()) {
+                targetEntity.inventory.insertItem(0, stack.copy(), false);
                 stack.shrink(1);
                 level.playSound(player, pos, SoundEvents.ITEM_PICKUP, SoundSource.BLOCKS, 1f, 2f);
-            } else if(!golfCupBlockEntity.inventory.getStackInSlot(0).isEmpty() && stack.isEmpty()) {
-                ItemStack stackOnPedestal = golfCupBlockEntity.inventory.extractItem(0, 1, false);
-                player.setItemInHand(InteractionHand.MAIN_HAND, stackOnPedestal);
-                golfCupBlockEntity.clearContents();
-                level.playSound(player, pos, SoundEvents.ITEM_PICKUP, SoundSource.BLOCKS, 1f, 1f);
+
+            } else if(!targetEntity.inventory.getStackInSlot(0).isEmpty()) {
+                ItemStack CupItem = targetEntity.inventory.getStackInSlot(0);
+                ItemStack HandItem = player.getMainHandItem();
+                Integer HandItemMax  = HandItem.getMaxStackSize();
+                Integer HandItemCurrent = HandItem.getCount();
+
+                if ( stack.isEmpty() || ((CupItem.getItem().getClass().equals(HandItem.getItem().getClass()) && (!HandItemCurrent.equals(HandItemMax))))) {
+                    //todo add the ball to the stack not overwrite the stack with the ball
+                    ItemStack stackOnPedestal = targetEntity.inventory.extractItem(0, 1, false);
+                    player.setItemInHand(InteractionHand.MAIN_HAND, stackOnPedestal);
+                    targetEntity.clearContents();
+                    level.playSound(player, pos, SoundEvents.ITEM_PICKUP, SoundSource.BLOCKS, 1f, 1f);
+
+                }
             }
         }
-
         return ItemInteractionResult.SUCCESS;
     }
 }
