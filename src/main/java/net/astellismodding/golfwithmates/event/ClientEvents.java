@@ -2,6 +2,7 @@ package net.astellismodding.golfwithmates.event;
 
 import net.astellismodding.golfwithmates.GolfWithMates;
 import net.astellismodding.golfwithmates.block.entity.renderer.GolfCupBlockEntityRenderer;
+import net.astellismodding.golfwithmates.block.entity.renderer.NameplateBlockEntityRenderer;
 import net.astellismodding.golfwithmates.init.ModBlockEntities;
 import net.astellismodding.golfwithmates.network.PuttPowerPayload;
 import net.astellismodding.golfwithmates.network.StrokePowerPayload;
@@ -75,6 +76,10 @@ public class ClientEvents {
             event.registerBlockEntityRenderer(
                     ModBlockEntities.GOLF_CLUP_BE.get(),
                     GolfCupBlockEntityRenderer::new
+            );
+            event.registerBlockEntityRenderer(
+                    ModBlockEntities.Nameplate_Block_BE.get(),
+                    NameplateBlockEntityRenderer::new
             );
         }
 

@@ -44,6 +44,11 @@ public class ModBlocks {
     public static final DeferredBlock<Block> GOLF_CUP = registerBlock("golf_cup",
             () -> new GolfCupBlock(BlockBehaviour.Properties.of().noOcclusion()));
 
+    public static final DeferredBlock<Block> Nameplate_Block = registerBlock("nameplate_block",
+            () -> new NameplateBlock(BlockBehaviour.Properties.of().noOcclusion()));
+
+
+
     private static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<T> block) {
         DeferredBlock<T> toReturn = BLOCKS.register(name, block);
         registerBlockItem(name, toReturn);
