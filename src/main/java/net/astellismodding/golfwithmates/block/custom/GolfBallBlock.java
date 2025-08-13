@@ -3,6 +3,7 @@ package net.astellismodding.golfwithmates.block.custom;
 import com.mojang.serialization.MapCodec;
 import net.astellismodding.golfwithmates.component.ModDataComponent;
 import net.astellismodding.golfwithmates.sound.ModSounds;
+import net.astellismodding.golfwithmates.util.ClubUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundSource;
@@ -60,7 +61,7 @@ public class GolfBallBlock extends FallingBlock {
             float roty = ((player.getYRot() % 360 + 360) % 360);
             ItemStack club = player.getMainHandItem();
 
-            Vec3 TargetLocation = CalculateHitResultLocation(pos.getX(), pos.getZ(), roty,  club.get(ModDataComponent.put_power).value(), 1);
+            Vec3 TargetLocation = ClubUtils.CalculateHitResultLocation(pos.getX(), pos.getZ(), roty,  club.get(ModDataComponent.put_power).value(), 1);
 
             if (level.isClientSide) {
                 level.playSeededSound(null, pos.getX(), pos.getY(), pos.getZ(), ModSounds.GolfPutt, SoundSource.BLOCKS, 1f, 1f, 0);
@@ -151,18 +152,6 @@ public class GolfBallBlock extends FallingBlock {
         return false;
     }
 
-    public Vec3 CalculateHitResultLocation(float x, float z, float r, double v, int driveType) {
-        double power = 16 * v * driveType;
-        float rot = r;
-
-        double angleRadians = Math.toRadians(rot);
-        double deltaX = power * Math.cos(angleRadians);
-        double deltaZ = power * Math.sin(angleRadians);
-        double newX = x - Math.floor(deltaX);
-        double newZ = z - Math.floor(deltaZ);
-
-        return new Vec3(Math.round(newX),0f, Math.round(newZ));
-    }
     protected int getDelayAfterPlace() {
         return 5;
     }
