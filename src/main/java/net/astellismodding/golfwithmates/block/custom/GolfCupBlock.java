@@ -2,6 +2,7 @@ package net.astellismodding.golfwithmates.block.custom;
 
 import com.mojang.serialization.MapCodec;
 import net.astellismodding.golfwithmates.block.entity.GolfCupBlockEntity;
+import net.astellismodding.golfwithmates.init.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
@@ -9,6 +10,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
@@ -82,7 +84,11 @@ public class GolfCupBlock extends BaseEntityBlock {
                 Integer HandItemMax  = HandItem.getMaxStackSize();
                 Integer HandItemCurrent = HandItem.getCount();
 
-                if ( stack.isEmpty() || (CupItem.getDisplayName().equals(HandItem.getDisplayName()) && (!HandItemCurrent.equals(HandItemMax)))) {
+                Boolean testcase1 = (HandItem.getItem().equals(ModBlocks.GOLF_BALL.get().asItem()));
+                Boolean testcase2 = (!HandItemCurrent.equals(HandItemMax));
+
+
+                if ( stack.isEmpty() || testcase1 && testcase2) {
                     ItemStack stackOnPedestal = targetEntity.inventory.extractItem(0, 1, false);
 
                     if (!stack.isEmpty()) {
