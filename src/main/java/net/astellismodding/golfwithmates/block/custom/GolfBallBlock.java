@@ -1,22 +1,32 @@
 package net.astellismodding.golfwithmates.block.custom;
 
 import com.mojang.serialization.MapCodec;
+import net.astellismodding.golfwithmates.block.entity.GolfBallBlockEntity;
+import net.astellismodding.golfwithmates.block.entity.GolfCupBlockEntity;
+import net.astellismodding.golfwithmates.block.entity.NameplateBlockEntity;
 import net.astellismodding.golfwithmates.component.ModDataComponent;
 import net.astellismodding.golfwithmates.sound.ModSounds;
 import net.astellismodding.golfwithmates.util.ClubUtils;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.FallingBlock;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.border.WorldBorder;
@@ -24,10 +34,15 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import org.jetbrains.annotations.Nullable;
+
+import java.awt.*;
 
 import static net.astellismodding.golfwithmates.util.ClubUtils.*;
 
-public class GolfBallBlock extends FallingBlock {
+public class GolfBallBlock extends BaseEntityBlock {
+
+    public static final MapCodec<GolfBallBlock> CODEC = simpleCodec(GolfBallBlock::new);
 
     private static final DirectionProperty PuttDirection = null;
     private static final VoxelShape CustomBoundingBox = Block.box(5, 0, 5, 11,5,11);
@@ -44,19 +59,54 @@ public class GolfBallBlock extends FallingBlock {
     }
 
     @Override
-    protected MapCodec<? extends FallingBlock> codec() {
-        return null;
+    protected MapCodec<? extends BaseEntityBlock> codec() {
+        return CODEC;
     }
+
+    @Override
+    public @Nullable BlockEntity newBlockEntity(BlockPos blockPos, BlockState blockState) {
+        return new GolfBallBlockEntity(blockPos, blockState);
+    }
+
 
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return CustomBoundingBox;
     }
 
+    @Override
+    protected RenderShape getRenderShape(BlockState state) {
+        return RenderShape.MODEL;
+    }
+
+    //todo enable this once block entity udpates work
+    @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
+        /*super.setPlacedBy(level, pos, state, placer, stack);
+        GolfBallBlockEntity targetEntity = (GolfBallBlockEntity) level.getBlockEntity(pos);
+
+        if (placer == null) {
+            return;
+        }
+
+        if (targetEntity == null) {
+            return;
+        }
+
+        targetEntity.setCustomName(placer.getDisplayName());*/
+    }
+
     //todo Feat: Add logic for rebounds
     //todo Feat: Add partical trace or maybe entity, visual of ball moving?
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+        //todo remove this when block entity updates work
+        GolfBallBlockEntity targetEntity = (GolfBallBlockEntity) level.getBlockEntity(pos);
+
+        targetEntity.setCustomName(player.getDisplayName());
+
+
+
         if (isClub(new ItemStack(player.getMainHandItem().getItem()))){
             float roty = ((player.getYRot() % 360 + 360) % 360);
             ItemStack club = player.getMainHandItem();
@@ -88,6 +138,8 @@ public class GolfBallBlock extends FallingBlock {
             int Targety = 0; //(int) offsetvec.y; <- not required for this tester
             int Targetz = (int) offsetvec.z;
             BlockPos targetpos = pos.offset(Targetx, Targety, Targetz);
+            BlockEntity BE = level.getBlockEntity(pos);
+            GolfBallBlockEntity gBE = (GolfBallBlockEntity) BE;
 
             if (level.getBlockState(targetpos).isAir() && worldborder.isWithinBounds(targetpos)) {
                 if (level.isClientSide) {
@@ -110,11 +162,17 @@ public class GolfBallBlock extends FallingBlock {
 
                     }
                 } else {
-
-                    level.setBlock(targetpos, state, 2);
+                    //todo Refactor: this is not the correct way, but it works
+                    BlockEntity oldBE = level.getBlockEntity(pos);
+                    if (oldBE instanceof GolfBallBlockEntity golfBallBlockEntity){
+                        level.setBlock(targetpos, state, 2);
+                        BlockEntity newBE = level.getBlockEntity(targetpos);
+                        Component name = ((GolfBallBlockEntity) oldBE).getCustomName();
+                        ((GolfBallBlockEntity) newBE).setCustomName(name);
+                    }
                     level.removeBlock(pos, false);
-                }
 
+                }
                 if (CheckHole(targetpos, level)){
                     level.playSeededSound(null, pos.getX(), pos.getY(), pos.getZ(), ModSounds.GolfScore, SoundSource.BLOCKS, 1f, 1f, 0);
                     TransferToCup(targetpos, level);

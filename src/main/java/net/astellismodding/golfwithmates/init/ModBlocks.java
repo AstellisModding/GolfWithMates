@@ -38,8 +38,8 @@ public class ModBlocks {
     public static final DeferredBlock<Block> GOLF_HOLE = registerBlock("golf_hole",
             () -> new GolfHoleBlock(BlockBehaviour.Properties.of().noOcclusion()));
 
-    public static final DeferredBlock<FallingBlock> GOLF_BALL = registerBlock("golf_ball",
-            () -> new GolfBallBlock(BlockBehaviour.Properties.of().noCollission()));
+    public static final DeferredBlock<Block> GOLF_BALL = registerBlock("golf_ball",
+            () -> new GolfBallBlock(BlockBehaviour.Properties.of().noOcclusion()));
 
     public static final DeferredBlock<Block> GOLF_CUP = registerBlock("golf_cup",
             () -> new GolfCupBlock(BlockBehaviour.Properties.of().noOcclusion()));
