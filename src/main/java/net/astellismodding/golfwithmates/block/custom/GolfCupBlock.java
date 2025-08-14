@@ -1,27 +1,44 @@
 package net.astellismodding.golfwithmates.block.custom;
 
 import com.mojang.serialization.MapCodec;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import net.astellismodding.golfwithmates.block.entity.GolfBallBlockEntity;
 import net.astellismodding.golfwithmates.block.entity.GolfCupBlockEntity;
+import net.astellismodding.golfwithmates.init.ModBlockEntities;
 import net.astellismodding.golfwithmates.init.ModBlocks;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.FireworkExplosion;
+import net.minecraft.world.item.component.Fireworks;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 public class GolfCupBlock extends BaseEntityBlock {
     public static final MapCodec<GolfCupBlock> CODEC = simpleCodec(GolfCupBlock::new);
+
     public GolfCupBlock(Properties properties) {
         super(properties);
     }
@@ -52,14 +69,47 @@ public class GolfCupBlock extends BaseEntityBlock {
         super.onRemove(state, level, pos, newState, movedByPiston);
     }
 
-    public boolean InsertBall(ItemStack stack, BlockPos pos,Level level) {
+    public boolean InsertBall(BlockEntity blockEntity, ItemStack stack, BlockPos pos,Level level) {
+        Boolean Result = false;
         if (level.getBlockEntity(pos.below()) instanceof GolfCupBlockEntity golfCupBlockEntity) {
             if (golfCupBlockEntity.inventory.getStackInSlot(0).isEmpty()) {
                 golfCupBlockEntity.inventory.insertItem(0, stack.copy(), false);
-                return true;
+                Result = true;
             }
         }
-        return false;
+        DisplayWin(((GolfBallBlockEntity) blockEntity).getPuttCounter(),pos, level);
+        return Result;
+    }
+
+    private void DisplayWin(int puttCounter, BlockPos pos, Level level) {
+        // The entity spawning logic now runs on the server, so we don't need to call it from the client.
+        if (level.isClientSide()) {
+            return;
+        }
+
+        if (level.getBlockEntity(pos.below()) instanceof GolfCupBlockEntity golfCup) {
+            Integer par = golfCup.getGolfPar();
+
+            if (par != null) {
+                if (puttCounter == 1) {
+
+                    golfCup.startCelebration(5, 20);
+                } else if (puttCounter <= par) {
+                    golfCup.startCelebration(2, 10);
+                }
+            }
+        }
+    }
+
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        // We only want this to run on the server side to prevent ghost entities.
+        if (!level.isClientSide()) {
+            return createTickerHelper(type, ModBlockEntities.GOLF_CLUP_BE.get(),
+                    (lvl, pos, st, be) -> be.tick(lvl, pos, st));
+        }
+        return null;
     }
 
     @Override
@@ -69,14 +119,6 @@ public class GolfCupBlock extends BaseEntityBlock {
         GolfCupBlockEntity targetEntity = (GolfCupBlockEntity) level.getBlockEntity(pos);
 
         if(targetEntity != null) {
-            /*Give the ball -- Blocked out because we dont need to manually put things into the hole...
-            if(targetEntity.inventory.getStackInSlot(0).isEmpty() && !stack.isEmpty()) {
-                targetEntity.inventory.insertItem(0, stack.copy(), false);
-                stack.shrink(1);
-                level.playSound(player, pos, SoundEvents.ITEM_PICKUP, SoundSource.BLOCKS, 1f, 2f);
-             }
-            */
-            //Take the ball
             if(!targetEntity.inventory.getStackInSlot(0).isEmpty()) {
 
                 ItemStack CupItem = targetEntity.inventory.getStackInSlot(0);

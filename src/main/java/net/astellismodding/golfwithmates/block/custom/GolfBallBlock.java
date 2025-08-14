@@ -79,10 +79,9 @@ public class GolfBallBlock extends BaseEntityBlock {
         return RenderShape.MODEL;
     }
 
-    //todo enable this once block entity udpates work
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
-        /*super.setPlacedBy(level, pos, state, placer, stack);
+        super.setPlacedBy(level, pos, state, placer, stack);
         GolfBallBlockEntity targetEntity = (GolfBallBlockEntity) level.getBlockEntity(pos);
 
         if (placer == null) {
@@ -92,20 +91,13 @@ public class GolfBallBlock extends BaseEntityBlock {
         if (targetEntity == null) {
             return;
         }
-
-        targetEntity.setCustomName(placer.getDisplayName());*/
+        Component input = placer.getDisplayName();
+        targetEntity.setCustomName(input);
     }
 
-    //todo Feat: Add logic for rebounds
     //todo Feat: Add partical trace or maybe entity, visual of ball moving?
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
-        //todo remove this when block entity updates work
-        GolfBallBlockEntity targetEntity = (GolfBallBlockEntity) level.getBlockEntity(pos);
-
-        targetEntity.setCustomName(player.getDisplayName());
-
-
 
         if (isClub(new ItemStack(player.getMainHandItem().getItem()))){
             float roty = ((player.getYRot() % 360 + 360) % 360);
@@ -128,7 +120,7 @@ public class GolfBallBlock extends BaseEntityBlock {
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
-    private void teleport(Vec3 TargetLocation, BlockState state, Level level, BlockPos pos) {
+    private boolean teleport(Vec3 TargetLocation, BlockState state, Level level, BlockPos pos) {
         WorldBorder worldborder = level.getWorldBorder();
 
         for (int i = 0; i < 1000; ++i) {
@@ -163,36 +155,42 @@ public class GolfBallBlock extends BaseEntityBlock {
                     }
                 } else {
                     //todo Refactor: this is not the correct way, but it works
-                    BlockEntity oldBE = level.getBlockEntity(pos);
-                    if (oldBE instanceof GolfBallBlockEntity golfBallBlockEntity){
+                    if (level.getBlockEntity(pos) instanceof GolfBallBlockEntity golfBallBlockEntity){
+                    golfBallBlockEntity.IncrementPuttCounter();
                         level.setBlock(targetpos, state, 2);
                         BlockEntity newBE = level.getBlockEntity(targetpos);
-                        Component name = ((GolfBallBlockEntity) oldBE).getCustomName();
+                        Component name = ((GolfBallBlockEntity) golfBallBlockEntity).getCustomName();
                         ((GolfBallBlockEntity) newBE).setCustomName(name);
+                        ((GolfBallBlockEntity) newBE).setPuttCounter(golfBallBlockEntity.getPuttCounter());
+
                     }
-                    level.removeBlock(pos, false);
+                level.removeBlock(pos, false);
 
                 }
-                if (CheckHole(targetpos, level)){
+                if (CheckHole(targetpos, level)) {
                     level.playSeededSound(null, pos.getX(), pos.getY(), pos.getZ(), ModSounds.GolfScore, SoundSource.BLOCKS, 1f, 1f, 0);
-                    TransferToCup(targetpos, level);
-
+                    if (level.getBlockEntity(targetpos) instanceof GolfBallBlockEntity golfBallBlockEntity) {
+                        TransferToCup(golfBallBlockEntity, targetpos, level);
+                    }
                 }
 
+                return true;
 
-                return;
+            }else{
+                return false;
             }
         }
+        return false;
     }
 
-    public void TransferToCup(BlockPos context, Level level) {
+    public void TransferToCup(BlockEntity blockEntity,BlockPos context, Level level) {
         BlockPos cuppos = context.below();
         Block CupBlock = level.getBlockState(cuppos).getBlock();
         ItemStack item = new ItemStack(this.asItem());
         Boolean wasInserted = false;
         //todo Feat: once block entity is setup for Ball you need to use the GetCloneItemStack method to copy the data across
         if (CupBlock instanceof GolfCupBlock) {
-            wasInserted = ((GolfCupBlock) CupBlock).InsertBall(item, context, level);
+            wasInserted = ((GolfCupBlock) CupBlock).InsertBall(blockEntity,item, context, level);
         }
 
         if (!wasInserted) {

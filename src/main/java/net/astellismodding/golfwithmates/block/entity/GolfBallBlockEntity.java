@@ -19,6 +19,7 @@ import javax.annotation.Nullable;
 
 public class GolfBallBlockEntity extends BlockEntity {
     private Component customName = Component.literal("Default Name");
+    private int puttCounter = 0;
 
     public GolfBallBlockEntity(BlockPos pPos, BlockState pBlockState) {
          super(ModBlockEntities.GOLF_BALL_BE.get(), pPos, pBlockState);
@@ -28,6 +29,7 @@ public class GolfBallBlockEntity extends BlockEntity {
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.putString("CustomName", Component.Serializer.toJson(this.customName,registries));
+        tag.putInt("PuttCounter", this.puttCounter);
     }
 
     @Override
@@ -35,6 +37,9 @@ public class GolfBallBlockEntity extends BlockEntity {
         super.loadAdditional(tag, registries);
         if (tag.contains("CustomName")) {
             this.customName = Component.Serializer.fromJson(tag.getString("CustomName"),registries);
+        }
+        if (tag.contains("PuttCounter")) {
+            this.puttCounter = tag.getInt("PuttCounter");
         }
     }
 
@@ -58,4 +63,21 @@ public class GolfBallBlockEntity extends BlockEntity {
         setChanged();
         level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
     }
+
+    public int getPuttCounter() {
+        return this.puttCounter;
+    }
+
+    public void setPuttCounter(int count) {
+        this.puttCounter = count;
+        setChanged();
+        level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
+    }
+
+    public void IncrementPuttCounter() {
+        this.puttCounter++;
+        setChanged();
+        level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
+    }
+
 }

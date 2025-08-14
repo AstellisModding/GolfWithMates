@@ -9,6 +9,7 @@ import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.level.block.state.BlockState;
 import org.joml.Matrix4f;
 
@@ -31,7 +32,9 @@ public class GolfBallBlockEntityRender implements BlockEntityRenderer<GolfBallBl
         // Pop the pose so the block's transformations don't apply to the text
         pPoseStack.popPose();
 
-        Component textToDisplay = pBlockEntity.getCustomName();
+        MutableComponent textToDisplay = pBlockEntity.getCustomName().copy()
+                .append(Component.literal(": " + pBlockEntity.getPuttCounter()));
+
         if (textToDisplay == null || textToDisplay.getString().isEmpty()) {
             return; // Don't render if there's no name
         }
@@ -58,6 +61,6 @@ public class GolfBallBlockEntityRender implements BlockEntityRenderer<GolfBallBl
     @Override
     public int getViewDistance() {
         // The maximum distance (squared) from which the renderer is active. Default is 64.
-        return 256;
+        return 2;
     }
 }
