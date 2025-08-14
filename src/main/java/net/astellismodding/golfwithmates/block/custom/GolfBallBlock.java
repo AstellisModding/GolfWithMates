@@ -2,13 +2,11 @@ package net.astellismodding.golfwithmates.block.custom;
 
 import com.mojang.serialization.MapCodec;
 import net.astellismodding.golfwithmates.block.entity.GolfBallBlockEntity;
-import net.astellismodding.golfwithmates.block.entity.GolfCupBlockEntity;
-import net.astellismodding.golfwithmates.block.entity.NameplateBlockEntity;
+import net.astellismodding.golfwithmates.block.entity.renderer.BeamBlockEntityRenderer;
 import net.astellismodding.golfwithmates.component.ModDataComponent;
 import net.astellismodding.golfwithmates.sound.ModSounds;
 import net.astellismodding.golfwithmates.util.ClubUtils;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundSource;
@@ -17,14 +15,12 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.FallingBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -35,8 +31,6 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
-
-import java.awt.*;
 
 import static net.astellismodding.golfwithmates.util.ClubUtils.*;
 
@@ -110,7 +104,7 @@ public class GolfBallBlock extends BaseEntityBlock {
             }
             level.playSeededSound(null, pos.getX(), pos.getY(), pos.getZ(), ModSounds.GolfPutt, SoundSource.BLOCKS, 1f, 1f, 0);
 
-            this.teleport(TargetLocation, state, level, pos);
+            //this.teleport(TargetLocation, state, level, pos);
         }
         return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
     }
