@@ -1,15 +1,15 @@
 package net.astellismodding.golfwithmates.block.custom;
 
 import com.mojang.serialization.MapCodec;
+import net.astellismodding.golfwithmates.block.entity.BeamBlockEntity;
 import net.astellismodding.golfwithmates.block.entity.GolfBallBlockEntity;
-import net.astellismodding.golfwithmates.block.entity.GolfCupBlockEntity;
-import net.astellismodding.golfwithmates.block.entity.NameplateBlockEntity;
 import net.astellismodding.golfwithmates.component.ModDataComponent;
+import net.astellismodding.golfwithmates.init.ModBlockEntities;
 import net.astellismodding.golfwithmates.sound.ModSounds;
 import net.astellismodding.golfwithmates.util.ClubUtils;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -17,16 +17,16 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.FallingBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.border.WorldBorder;
@@ -36,14 +36,11 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.*;
-
 import static net.astellismodding.golfwithmates.util.ClubUtils.*;
 
 public class GolfBallBlock extends BaseEntityBlock {
 
     public static final MapCodec<GolfBallBlock> CODEC = simpleCodec(GolfBallBlock::new);
-
     private static final DirectionProperty PuttDirection = null;
     private static final VoxelShape CustomBoundingBox = Block.box(5, 0, 5, 11,5,11);
     int blockX = 0;
@@ -93,6 +90,7 @@ public class GolfBallBlock extends BaseEntityBlock {
         }
         Component input = placer.getDisplayName();
         targetEntity.setCustomName(input);
+        targetEntity.addTargetPosition(pos.getCenter());
     }
 
     //todo Feat: Add partical trace or maybe entity, visual of ball moving?
@@ -100,17 +98,26 @@ public class GolfBallBlock extends BaseEntityBlock {
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
 
         if (isClub(new ItemStack(player.getMainHandItem().getItem()))){
-            float roty = ((player.getYRot() % 360 + 360) % 360);
             ItemStack club = player.getMainHandItem();
 
-            Vec3 TargetLocation = ClubUtils.CalculateHitResultLocation(pos.getX(), pos.getZ(), roty,  club.get(ModDataComponent.put_power).value(), 1);
+            Vec3 TargetLocation = ClubUtils.calculateHitResultAbsoluteLocation(pos.getX(),pos.getY(),pos.getZ(), player.getYRot(),  club.get(ModDataComponent.put_power).value(), 1);
+            GolfBallBlockEntity golfBall = (GolfBallBlockEntity) level.getBlockEntity(pos);
+            BlockPos TargetBlockPos = new BlockPos((int)TargetLocation.x,(int)TargetLocation.y,(int)TargetLocation.z);
+            golfBall.addTargetPosition(TargetBlockPos.getCenter());
 
+            if (!golfBall.isActive()){
+                golfBall.setActive(true);
+            }
             if (level.isClientSide) {
                 level.playSeededSound(null, pos.getX(), pos.getY(), pos.getZ(), ModSounds.GolfPutt, SoundSource.BLOCKS, 1f, 1f, 0);
             }
             level.playSeededSound(null, pos.getX(), pos.getY(), pos.getZ(), ModSounds.GolfPutt, SoundSource.BLOCKS, 1f, 1f, 0);
+            //golfBall = (GolfBallBlockEntity) level.getBlockEntity(pos);
 
-            this.teleport(TargetLocation, state, level, pos);
+
+
+
+            this.teleport(TargetBlockPos, state, level, pos);
         }
         return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
     }
@@ -120,20 +127,14 @@ public class GolfBallBlock extends BaseEntityBlock {
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
-    private boolean teleport(Vec3 TargetLocation, BlockState state, Level level, BlockPos pos) {
+    private boolean teleport(BlockPos targetBlockPos, BlockState state, Level level, BlockPos pos) {
         WorldBorder worldborder = level.getWorldBorder();
+        GolfBallBlockEntity golfBall = (GolfBallBlockEntity) level.getBlockEntity(pos);
 
         for (int i = 0; i < 1000; ++i) {
+            golfBall.setActive(true); // Start the beam
 
-            Vec3 offsetvec = pos.getCenter().subtract(TargetLocation);
-            int Targetx = (int) offsetvec.x;
-            int Targety = 0; //(int) offsetvec.y; <- not required for this tester
-            int Targetz = (int) offsetvec.z;
-            BlockPos targetpos = pos.offset(Targetx, Targety, Targetz);
-            BlockEntity BE = level.getBlockEntity(pos);
-            GolfBallBlockEntity gBE = (GolfBallBlockEntity) BE;
-
-            if (level.getBlockState(targetpos).isAir() && worldborder.isWithinBounds(targetpos)) {
+            if (level.getBlockState(targetBlockPos).isAir() && worldborder.isWithinBounds(targetBlockPos)) {
                 if (level.isClientSide) {
                     //client side 4-6 seconds display ?
                     for (int j = 0; j < 128; ++j) {
@@ -147,30 +148,33 @@ public class GolfBallBlock extends BaseEntityBlock {
                         float f2 = (level.random.nextFloat() - 0.5F) * 0.2F;
 
                         //Particles, getting location and adding the particles
-                        double d1 = Mth.lerp(d0, (double) targetpos.getX(), (double) pos.getX()) + (level.random.nextDouble() - (double) 0.5F) + (double) 0.5F;
-                        double d2 = Mth.lerp(d0, (double) targetpos.getY(), (double) pos.getY()) + level.random.nextDouble() - (double) 0.5F;
-                        double d3 = Mth.lerp(d0, (double) targetpos.getZ(), (double) pos.getZ()) + (level.random.nextDouble() - (double) 0.5F) + (double) 0.5F;
+                        double d1 = Mth.lerp(d0, (double) targetBlockPos.getX(), (double) pos.getX()) + (level.random.nextDouble() - (double) 0.5F) + (double) 0.5F;
+                        double d2 = Mth.lerp(d0, (double) targetBlockPos.getY(), (double) pos.getY()) + level.random.nextDouble() - (double) 0.5F;
+                        double d3 = Mth.lerp(d0, (double) targetBlockPos.getZ(), (double) pos.getZ()) + (level.random.nextDouble() - (double) 0.5F) + (double) 0.5F;
                         level.addParticle(ParticleTypes.PORTAL, d1, d2, d3, (double) f, (double) f1, (double) f2);
 
                     }
                 } else {
                     //todo Refactor: this is not the correct way, but it works
-                    if (level.getBlockEntity(pos) instanceof GolfBallBlockEntity golfBallBlockEntity){
-                    golfBallBlockEntity.IncrementPuttCounter();
-                        level.setBlock(targetpos, state, 2);
-                        BlockEntity newBE = level.getBlockEntity(targetpos);
-                        Component name = ((GolfBallBlockEntity) golfBallBlockEntity).getCustomName();
-                        ((GolfBallBlockEntity) newBE).setCustomName(name);
-                        ((GolfBallBlockEntity) newBE).setPuttCounter(golfBallBlockEntity.getPuttCounter());
+                    if (level.getBlockEntity(pos) instanceof GolfBallBlockEntity golfBallBlockEntity) {
+                        golfBallBlockEntity.IncrementPuttCounter();
+                        CompoundTag nbtData = golfBallBlockEntity.saveWithoutMetadata(level.registryAccess());
+                        level.setBlock(targetBlockPos, state, 2);
+                        if (level.getBlockEntity(targetBlockPos) instanceof GolfBallBlockEntity newGolfBallBE) {
+                            nbtData.putInt("x", targetBlockPos.getX());
+                            nbtData.putInt("y", targetBlockPos.getY());
+                            nbtData.putInt("z", targetBlockPos.getZ());
+                            newGolfBallBE.loadWithComponents(nbtData, level.registryAccess());
+                            newGolfBallBE.setChanged();
+                        }
+                        level.removeBlock(pos, false);
 
                     }
-                level.removeBlock(pos, false);
-
                 }
-                if (CheckHole(targetpos, level)) {
+                if (CheckHole(targetBlockPos, level)) {
                     level.playSeededSound(null, pos.getX(), pos.getY(), pos.getZ(), ModSounds.GolfScore, SoundSource.BLOCKS, 1f, 1f, 0);
-                    if (level.getBlockEntity(targetpos) instanceof GolfBallBlockEntity golfBallBlockEntity) {
-                        TransferToCup(golfBallBlockEntity, targetpos, level);
+                    if (level.getBlockEntity(targetBlockPos) instanceof GolfBallBlockEntity golfBallBlockEntity) {
+                        TransferToCup(golfBallBlockEntity, targetBlockPos, level);
                     }
                 }
 
@@ -207,6 +211,7 @@ public class GolfBallBlock extends BaseEntityBlock {
         }
         return false;
     }
+
 
     protected int getDelayAfterPlace() {
         return 5;

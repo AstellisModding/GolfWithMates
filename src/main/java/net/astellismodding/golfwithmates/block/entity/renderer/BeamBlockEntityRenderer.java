@@ -2,64 +2,59 @@ package net.astellismodding.golfwithmates.block.entity.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.astellismodding.golfwithmates.block.entity.BeamBlockEntity;
 import net.astellismodding.golfwithmates.block.entity.GolfBallBlockEntity;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
+import net.astellismodding.golfwithmates.block.entity.NameplateBlockEntity;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
+import org.joml.Quaternionf;
+import com.mojang.math.Axis;
+import net.astellismodding.golfwithmates.block.entity.BeamBlockEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
-import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
-import java.awt.*;
+import java.awt.Color;
 
-public class GolfBallBlockEntityRender implements BlockEntityRenderer<GolfBallBlockEntity> {
-    private final Font font;
-    private final BlockRenderDispatcher blockRenderer;
+public class BeamBlockEntityRenderer implements BlockEntityRenderer<BeamBlockEntity> {
+
+    public BeamBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
+
+    }
+    // You'll need to define the location of your beam texture.
+    // You can use the vanilla one or create your own.
     private static final ResourceLocation BEAM_TEXTURE = ResourceLocation.withDefaultNamespace("textures/entity/beacon_beam.png");
 
-    public GolfBallBlockEntityRender(BlockEntityRendererProvider.Context context) {
-        this.font = context.getFont();
-        this.blockRenderer = context.getBlockRenderDispatcher();
-    }
-
     @Override
-    public void render(GolfBallBlockEntity pBlockEntity, float pPartialTick, PoseStack pPoseStack, MultiBufferSource pBufferSource, int pPackedLight, int pPackedOverlay) {
-
-        long gameTime = pBlockEntity.getLevel().getGameTime();
+    public void render(BeamBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
+        long gameTime = blockEntity.getLevel().getGameTime();
         int color = Color.RED.getRGB();
         float beamRadius = 0.05f;
-        Vec3[] targetPositions = pBlockEntity.getPositionsForRendering();
+        Vec3[] targetPositions = blockEntity.getPositionsForRendering();
 
-        if (!pBlockEntity.isActive() || targetPositions == null || targetPositions.length == 0) {
+        if (!blockEntity.isActive() || targetPositions == null || targetPositions.length == 0) {
             return;
         }
 
-        Level level = pBlockEntity.getLevel();
+        Level level = blockEntity.getLevel();
         if (level == null) {
             return;
         }
 
         // Get the block's world position as the starting point
-        BlockPos blockPos = pBlockEntity.getBlockPos();
+        BlockPos blockPos = blockEntity.getBlockPos();
         Vec3 blockWorldPos = Vec3.atCenterOf(blockPos).add(0, 0.5, 0); // Slightly above center
 
         // Start from the block's world position
-        Vec3 currentWorldPos = targetPositions[0];
+        Vec3 currentWorldPos = blockWorldPos;
 
         // Draw connected lines between all points in sequence
         for (Vec3 nextWorldPos : targetPositions) {
@@ -68,43 +63,13 @@ public class GolfBallBlockEntityRender implements BlockEntityRenderer<GolfBallBl
                 Vec3 startPosRelative = currentWorldPos.subtract(Vec3.atLowerCornerOf(blockPos));
                 Vec3 endPosRelative = nextWorldPos.subtract(Vec3.atLowerCornerOf(blockPos));
 
-                renderBeamBetween(pPoseStack, pBufferSource, pPartialTick, level.getGameTime(),
+                renderBeamBetween(poseStack, bufferSource, partialTick, level.getGameTime(),
                         startPosRelative, endPosRelative, color, beamRadius);
 
                 // Move to the next point for the next segment
                 currentWorldPos = nextWorldPos;
             }
         }
-
-
-
-        BlockState blockState = pBlockEntity.getBlockState();
-        pPoseStack.pushPose();
-        //this.blockRenderer.renderSingleBlock(blockState, pPoseStack, pBufferSource, pPackedLight, pPackedOverlay);
-
-
-        // Pop the pose so the block's transformations don't apply to the text
-        pPoseStack.popPose();
-
-        MutableComponent textToDisplay = pBlockEntity.getCustomName().copy()
-                .append(Component.literal(": " + pBlockEntity.getPuttCounter()));
-
-        if (textToDisplay == null || textToDisplay.getString().isEmpty()) {
-            return; // Don't render if there's no name
-        }
-
-        pPoseStack.pushPose(); // Start a new transformation state for the text
-        pPoseStack.translate(0.5, 1.25, 0.5);
-        pPoseStack.mulPose(Minecraft.getInstance().getEntityRenderDispatcher().cameraOrientation());
-        float scale = 0.025f;
-        pPoseStack.scale(scale, -scale, scale);
-        Matrix4f matrix4f = pPoseStack.last().pose();
-        float textWidth = this.font.width(textToDisplay);
-
-        this.font.drawInBatch(textToDisplay, -textWidth / 2, 0, 0x000000, false, matrix4f, pBufferSource, Font.DisplayMode.SEE_THROUGH, 0x40000000, pPackedLight);
-        this.font.drawInBatch(textToDisplay, -textWidth / 2, 0, 0xFFFFFF, false, matrix4f, pBufferSource, Font.DisplayMode.NORMAL, 0, pPackedLight);
-
-        pPoseStack.popPose(); // Restore the previous transformation state
     }
 
     /**
@@ -229,10 +194,9 @@ public class GolfBallBlockEntityRender implements BlockEntityRenderer<GolfBallBl
     }
 
     @Override
-    public boolean shouldRenderOffScreen(GolfBallBlockEntity blockEntity) {
+    public boolean shouldRenderOffScreen(BeamBlockEntity blockEntity) {
         return true;
     }
-
 
     @Override
     public int getViewDistance() {
@@ -240,13 +204,14 @@ public class GolfBallBlockEntityRender implements BlockEntityRenderer<GolfBallBl
     }
 
     @Override
-    public boolean shouldRender(GolfBallBlockEntity blockEntity, Vec3 cameraPos) {
+    public boolean shouldRender(BeamBlockEntity blockEntity, Vec3 cameraPos) {
+        // Always render if beam is active
         return blockEntity.isActive();
     }
 
     @Override
-    public AABB getRenderBoundingBox(GolfBallBlockEntity blockEntity) {
-    // Create bounding box that encompasses all target positions
+    public AABB getRenderBoundingBox(BeamBlockEntity blockEntity) {
+        // Create bounding box that encompasses all target positions
         if (!blockEntity.isActive() || blockEntity.getPositionsForRendering() == null) {
             return new AABB(Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY,
                     Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
@@ -279,5 +244,4 @@ public class GolfBallBlockEntityRender implements BlockEntityRenderer<GolfBallBl
         // Add some padding
         return new AABB(minX - 2, minY - 2, minZ - 2, maxX + 2, maxY + 2, maxZ + 2);
     }
-
 }

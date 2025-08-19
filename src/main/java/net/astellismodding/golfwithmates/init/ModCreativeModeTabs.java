@@ -29,6 +29,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModBlocks.GOLF_BALL);
                         output.accept(ModItems.GOLF_CLUB_PUTTER);
                         output.accept(ModBlocks.Nameplate_Block);
+                        output.accept(ModBlocks.Beam_Block);
                     })).build());
 
     public static void register(IEventBus eventBus){
