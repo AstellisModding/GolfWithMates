@@ -10,20 +10,40 @@ public class ClubUtils {
         return item.is(ModTags.Items.GOLF_CLUBS);
     }
 
-    //todo Feat: Rebound - notes in this file
-    public static Vec3 CalculateHitResultLocation(float x, float z, float r, double v, int driveType) {
-        double power = 16 * v * driveType;
-        float rot = r;
+    /**
+     * Calculates a target location on the XZ plane that is 90 degrees to the left of a given direction.
+     * Assumes the rotation is a standard Minecraft yaw value.
+     *
+     * @param initialX   The starting X coordinate.
+     * @param initialY   The starting Y coordinate.
+     * @param initialZ   The starting Z coordinate.
+     * @param facingYaw  The initial direction in degrees (Minecraft yaw, where 0 is South). The calculation will be offset 90 degrees left of this.
+     * @param velocity   The velocity multiplier.
+     * @param driveType  An additional multiplier for power (e.g., club type).
+     * @return A new Vec3 representing the final rounded location on the Y=0 plane.
+     */
+    public static Vec3 calculateHitResultAbsoluteLocation(double initialX,double initialY, double initialZ, float facingYaw, double velocity, int driveType) {
+        // 1. Calculate the total power of the hit
+        double power = 16 * velocity * driveType;
 
-        double angleRadians = Math.toRadians(rot);
-        double deltaX = power * Math.cos(angleRadians);
-        double deltaZ = power * Math.sin(angleRadians);
-        double newX = x - Math.floor(deltaX);
-        double newZ = z - Math.floor(deltaZ);
+        // 2. Adjust the angle to be 90 degrees to the left of the facing direction
+        //    Subtracting 90 degrees from the yaw achieves this.
+        float leftYaw = facingYaw - 90.0f;
 
-        return new Vec3(Math.round(newX),0f, Math.round(newZ));
+        // 3. Convert the new 'left' yaw from degrees to radians
+        double angleRadians = Math.toRadians(leftYaw);
+
+        // 4. Calculate the change in X and Z using the adjusted angle
+        double deltaX = -power * Math.sin(angleRadians);
+        double deltaZ = power * Math.cos(angleRadians);
+
+        // 5. Calculate the new, precise location by adding the change
+        double newX = initialX + deltaX;
+        double newZ = initialZ + deltaZ;
+
+        // 6. Return the location rounded to the nearest whole block coordinate
+        return new Vec3(Math.round(newX), initialY, Math.round(newZ));
     }
-
 
 
     /**

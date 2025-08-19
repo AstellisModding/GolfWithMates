@@ -1,6 +1,7 @@
 package net.astellismodding.golfwithmates.init;
 
 import net.astellismodding.golfwithmates.GolfWithMates;
+import net.astellismodding.golfwithmates.block.entity.BeamBlockEntity;
 import net.astellismodding.golfwithmates.block.entity.GolfBallBlockEntity;
 import net.astellismodding.golfwithmates.block.entity.GolfCupBlockEntity;
 import net.astellismodding.golfwithmates.block.entity.NameplateBlockEntity;
@@ -27,6 +28,10 @@ public class ModBlockEntities {
     public static final Supplier<BlockEntityType<NameplateBlockEntity>> Nameplate_Block_BE =
             BLOCK_ENTITIES.register("nameplate_block", () -> BlockEntityType.Builder.of(
                     NameplateBlockEntity::new, ModBlocks.Nameplate_Block.get()).build(null));
+
+    public static final Supplier<BlockEntityType<BeamBlockEntity>> Beam_Block_BE =
+            BLOCK_ENTITIES.register("beam_block", () -> BlockEntityType.Builder.of(
+                    BeamBlockEntity::new, ModBlocks.Beam_Block.get()).build(null));
 
     public static void registerHandler(IEventBus e){
         BLOCK_ENTITIES.register(e);

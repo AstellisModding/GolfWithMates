@@ -47,6 +47,8 @@ public class ModBlocks {
     public static final DeferredBlock<Block> Nameplate_Block = registerBlock("nameplate_block",
             () -> new NameplateBlock(BlockBehaviour.Properties.of().noOcclusion()));
 
+    public static final DeferredBlock<Block> Beam_Block = registerBlock("beam_block",
+            () -> new BeamBlock(BlockBehaviour.Properties.of().noOcclusion()));
 
 
     private static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<T> block) {

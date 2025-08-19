@@ -1,6 +1,7 @@
 package net.astellismodding.golfwithmates.event;
 
 import net.astellismodding.golfwithmates.GolfWithMates;
+import net.astellismodding.golfwithmates.block.entity.renderer.BeamBlockEntityRenderer;
 import net.astellismodding.golfwithmates.block.entity.renderer.GolfBallBlockEntityRender;
 import net.astellismodding.golfwithmates.block.entity.renderer.GolfCupBlockEntityRenderer;
 import net.astellismodding.golfwithmates.block.entity.renderer.NameplateBlockEntityRenderer;
@@ -11,8 +12,6 @@ import net.astellismodding.golfwithmates.render.CScrollIncrementer;
 import net.astellismodding.golfwithmates.util.ModKeyMappings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.PacketUtils;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -20,6 +19,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.client.event.InputEvent.MouseScrollingEvent;
 
@@ -83,19 +83,15 @@ public class ClientEvents {
                     NameplateBlockEntityRenderer::new
             );
             event.registerBlockEntityRenderer(
+                    ModBlockEntities.Beam_Block_BE.get(),
+                    BeamBlockEntityRenderer::new
+            );
+            event.registerBlockEntityRenderer(
                     ModBlockEntities.GOLF_BALL_BE.get(),
                     GolfBallBlockEntityRender::new
             );
         }
-
-
-
-
-
-
-
-
-    }
+            }
 
 
 
