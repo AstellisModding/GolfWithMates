@@ -97,6 +97,15 @@ public class ClubUtils {
         }
     }
 
+    public static Vec3[] CalculatePath() {
+        //Calculate an array of blockpositions, using the original position and the new position calculated by calculateHitResultAbsoluteLocation
+    }
+
+    public static void CalculateShot() {
+        //loop though the array of block positions from CalculatePath and see if there is a block in the way, if there is no block in the way, keep going and if there is a block in thte way we need to calcualte the rebound using the angle compared to starting positon and current position
+        //then we need to rerun this calculate shot with the new CalculatePath from the rebound to the new end location.
+        //we need to deincriment the velocity every block it goes by 1 velocity, so 16v = 16 blocks
+    }
 
 
 
