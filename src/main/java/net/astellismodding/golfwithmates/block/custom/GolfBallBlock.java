@@ -93,7 +93,6 @@ public class GolfBallBlock extends BaseEntityBlock {
         targetEntity.addTargetPosition(pos.getCenter());
     }
 
-    //todo Feat: Add partical trace or maybe entity, visual of ball moving?
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
 
@@ -103,7 +102,7 @@ public class GolfBallBlock extends BaseEntityBlock {
             Vec3 TargetLocation = ClubUtils.calculateHitResultAbsoluteLocation(pos.getX(),pos.getY(),pos.getZ(), player.getYRot(),  club.get(ModDataComponent.put_power).value(), 1);
             GolfBallBlockEntity golfBall = (GolfBallBlockEntity) level.getBlockEntity(pos);
             BlockPos TargetBlockPos = new BlockPos((int)TargetLocation.x,(int)TargetLocation.y,(int)TargetLocation.z);
-            golfBall.addTargetPosition(TargetBlockPos.getCenter());
+
 
             if (!golfBall.isActive()){
                 golfBall.setActive(true);
@@ -135,6 +134,7 @@ public class GolfBallBlock extends BaseEntityBlock {
             golfBall.setActive(true); // Start the beam
 
             if (level.getBlockState(targetBlockPos).isAir() && worldborder.isWithinBounds(targetBlockPos)) {
+                golfBall.addTargetPosition(targetBlockPos.getCenter());
                 if (level.isClientSide) {
                     //client side 4-6 seconds display ?
                     for (int j = 0; j < 128; ++j) {
@@ -155,7 +155,6 @@ public class GolfBallBlock extends BaseEntityBlock {
 
                     }
                 } else {
-                    //todo Refactor: this is not the correct way, but it works
                     if (level.getBlockEntity(pos) instanceof GolfBallBlockEntity golfBallBlockEntity) {
                         golfBallBlockEntity.IncrementPuttCounter();
                         CompoundTag nbtData = golfBallBlockEntity.saveWithoutMetadata(level.registryAccess());
@@ -192,7 +191,6 @@ public class GolfBallBlock extends BaseEntityBlock {
         Block CupBlock = level.getBlockState(cuppos).getBlock();
         ItemStack item = new ItemStack(this.asItem());
         Boolean wasInserted = false;
-        //todo Feat: once block entity is setup for Ball you need to use the GetCloneItemStack method to copy the data across
         if (CupBlock instanceof GolfCupBlock) {
             wasInserted = ((GolfCupBlock) CupBlock).InsertBall(blockEntity,item, context, level);
         }

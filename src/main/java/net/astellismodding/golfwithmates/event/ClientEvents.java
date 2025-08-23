@@ -61,7 +61,6 @@ public class ClientEvents {
         public static void onMouseEvent(MouseScrollingEvent event) {
             if (minecraft.player != null && minecraft.player.isShiftKeyDown()) {
                 double delta = event.getScrollDeltaY();
-                //todo add check for the golf club
                 if (delta != 0) {
                     int shift = scrollIncrementer.scroll(delta);
                     if (shift != 0) {
