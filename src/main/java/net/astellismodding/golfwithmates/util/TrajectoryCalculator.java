@@ -2,62 +2,189 @@ package net.astellismodding.golfwithmates.util;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Orchestrates the full golf ball simulation.
+ * Calls PhysicsUtils for math, reads the world for collision, produces a ShotResult.
+ *
+ * All simulation runs on the SERVER only — never call this client-side.
+ * The resulting ShotResult is synced to the client via GolfBallBlockEntity.
+ */
 public class TrajectoryCalculator {
 
-    public static Vec3 calculateHitResult(Vec3 initialPos, float yaw, double velocity, int driveType) {
-        double power = 16 * velocity * driveType;
-        float leftYaw = yaw - 90.0f;
-        double angleRadians = Math.toRadians(leftYaw);
-        double deltaX = -power * Math.sin(angleRadians);
-        double deltaZ = power * Math.cos(angleRadians);
-        return new Vec3(Math.round(initialPos.x + deltaX), initialPos.y, Math.round(initialPos.z + deltaZ));
+    // -------------------------------------------------------------------------
+    // Constants
+    // -------------------------------------------------------------------------
+
+    /** Sub-block step size. Smaller = more accurate collision, more iterations. 0.25 is a good balance. */
+    private static final double STEP_SIZE = 0.25;
+
+    /** Hard cap on iterations — prevents infinite loops on pathological inputs. */
+    private static final int MAX_ITERATIONS = 2000;
+
+    /**
+     * Max consecutive bounces before we force the ball to rest.
+     * Prevents the ball from pinballing forever in a corner.
+     */
+    private static final int MAX_BOUNCES = 16;
+
+    // -------------------------------------------------------------------------
+    // Entry points
+    // -------------------------------------------------------------------------
+
+    /**
+     * Simulates a putter shot — flat XZ plane, full block rebound, friction deceleration.
+     *
+     * @param startPos  World position the ball is hit from.
+     * @param yaw       Player facing yaw in degrees (Minecraft convention).
+     * @param speed     Initial speed (roughly: speed N = travels up to N blocks).
+     * @param world     Server-side Level for block lookups.
+     * @return Complete ShotResult with full path of PathNodes.
+     */
+    public static ShotResult simulatePutterShot(Vec3 startPos, float yaw, double speed, Level world) {
+        Vec3 initialVelocity = PhysicsUtils.calculateFlatLaunchVelocity(speed, yaw);
+        return simulate(startPos, initialVelocity, world, false);
     }
 
-    public static List<Vec3> calculatePath(Vec3 start, Vec3 end, int velocity) {
-        List<Vec3> path = new ArrayList<>();
-        Vec3 direction = end.subtract(start).normalize();
-        Vec3 current = start;
-
-        for (int i = 0; i < velocity; i++) {
-            current = current.add(direction);
-            path.add(current);
-        }
-
-        return path;
+    /**
+     * Simulates a parabolic shot — drivers, irons, wedges.
+     * Gravity is applied each step. Bounces on landing.
+     *
+     * @param startPos    World position the ball is hit from.
+     * @param yaw         Player facing yaw in degrees.
+     * @param speed       Initial scalar speed.
+     * @param launchAngle Vertical launch angle in degrees (e.g. 15 for driver, 45 for wedge).
+     * @param world       Server-side Level for block lookups.
+     * @return Complete ShotResult with full path of PathNodes.
+     */
+    public static ShotResult simulateParabolicShot(Vec3 startPos, float yaw, double speed, float launchAngle, Level world) {
+        Vec3 initialVelocity = PhysicsUtils.calculateLaunchVelocity(speed, yaw, launchAngle);
+        return simulate(startPos, initialVelocity, world, true);
     }
 
-    public static Vec3 calculateNextRebound(Vec3 currentVelocity, BlockPos hitBlock, Vec3 impactPoint, double bounciness) {
-        Vec3 surfaceNormal = PhysicsUtils.getBlockFaceNormal(impactPoint, hitBlock);
-        return PhysicsUtils.calculateRebound(currentVelocity, surfaceNormal, bounciness);
-    }
+    // -------------------------------------------------------------------------
+    // Core simulation loop
+    // -------------------------------------------------------------------------
 
-    public static void simulateShot(Vec3 initialPosition, float yaw, double velocity, int driveType, Level world) {
-        Vec3 endPosition = calculateHitResult(initialPosition, yaw, velocity, driveType);
-        List<Vec3> path = calculatePath(initialPosition, endPosition, (int) (16 * velocity));
+    /**
+     * Iterative simulation engine shared by all shot types.
+     * Walks the ball forward in STEP_SIZE increments, checks for collisions,
+     * applies physics, and records a PathNode at each meaningful event.
+     *
+     * @param startPos        Starting world position.
+     * @param initialVelocity Initial velocity vector from PhysicsUtils.
+     * @param world           Server-side Level.
+     * @param applyGravity    True for parabolic shots, false for putter.
+     * @return ShotResult containing the complete path.
+     */
+    private static ShotResult simulate(Vec3 startPos, Vec3 initialVelocity, Level world, boolean applyGravity) {
+        List<PathNode> nodes = new ArrayList<>();
+        nodes.add(new PathNode(startPos, initialVelocity, PathNode.NodeType.FLIGHT));
 
-        for (Vec3 point : path) {
-            BlockPos pos = new BlockPos((int) point.x, (int) point.y, (int) point.z);
-            if (!world.getBlockState(pos).isAir()) {
-                // Collision detected – rebound
-                Vec3 reboundVelocity = calculateNextRebound(
-                        endPosition.subtract(initialPosition).normalize(),
-                        pos,
-                        point,
-                        0.8 // Example bounciness
-                );
+        Vec3 pos = startPos;
+        Vec3 vel = initialVelocity;
 
-                // Recurse with new trajectory
-                simulateShot(point, PhysicsUtils.calculateAngleOfAttack(
-                        new BlockPos(initialPosition), new BlockPos(point)
-                ), reboundVelocity.length(), 1, world);
-                return;
+        int iterations   = 0;
+        int bounceCount  = 0;
+        boolean grounded = false;
+
+        while (iterations < MAX_ITERATIONS && vel.length() > PhysicsUtils.STOP_THRESHOLD) {
+            iterations++;
+
+            // --- Compute the next candidate position ---
+            Vec3 stepVel  = vel.scale(STEP_SIZE);
+            Vec3 nextPos  = pos.add(stepVel);
+
+            // --- Apply gravity if airborne ---
+            if (applyGravity && !grounded) {
+                vel = PhysicsUtils.applyGravity(vel);
+            }
+
+            // --- Block collision checks ---
+            BlockPos nextBlockPos  = BlockPos.containing(nextPos);
+            BlockPos belowBlockPos = nextBlockPos.below();
+
+            BlockState nextBlock  = world.getBlockState(nextBlockPos);
+            BlockState belowBlock = world.getBlockState(belowBlockPos);
+
+            // CASE 1: Solid block directly in the path (side collision)
+            if (!nextBlock.isAir() && nextBlock.isSolid()) {
+                if (bounceCount >= MAX_BOUNCES) {
+                    // Too many bounces — force rest at current position
+                    nodes.add(new PathNode(pos, Vec3.ZERO, PathNode.NodeType.REST));
+                    break;
+                }
+
+                Vec3 surfaceNormal = PhysicsUtils.getBlockFaceNormal(nextPos, nextBlockPos);
+                double bounciness  = getBounciness(nextBlock.getBlock());
+                vel = PhysicsUtils.calculateRebound(vel, surfaceNormal, bounciness);
+
+                nodes.add(new PathNode(pos, vel, PathNode.NodeType.BOUNCE));
+                bounceCount++;
+                grounded = false;
+                // Don't advance pos — recalculate direction from same position
+                continue;
+            }
+
+            // CASE 2: No floor beneath — ball is airborne (falling or launched)
+            if (belowBlock.isAir() || !belowBlock.isSolid()) {
+                pos = nextPos;
+                grounded = false;
+
+                // Only record FLIGHT nodes every 4 steps to keep path list lean
+                if (iterations % 4 == 0) {
+                    nodes.add(new PathNode(pos, vel, PathNode.NodeType.FLIGHT));
+                }
+                continue;
+            }
+
+            // CASE 3: Floor exists — ball is on the ground, apply friction
+            pos = nextPos;
+            grounded = true;
+            vel = PhysicsUtils.applyFriction(vel, belowBlock.getBlock());
+
+            // Record a ROLL node every 4 steps
+            if (iterations % 4 == 0) {
+                nodes.add(new PathNode(pos, vel, PathNode.NodeType.ROLL));
             }
         }
-        // Ball reached end with no collision
+
+        // --- Always end with a REST node at the final position ---
+        if (nodes.isEmpty() || nodes.get(nodes.size() - 1).type != PathNode.NodeType.REST) {
+            nodes.add(new PathNode(pos, Vec3.ZERO, PathNode.NodeType.REST));
+        }
+
+        // TODO: hole detection — check if pos is inside a hole block, pass true to reachedHole
+        return new ShotResult(nodes, false);
+    }
+
+    // -------------------------------------------------------------------------
+    // Bounciness lookup
+    // -------------------------------------------------------------------------
+
+    /**
+     * Per-block bounciness coefficient.
+     * 1.0 = perfect bounce (no energy loss), 0.0 = dead stop on impact.
+     * Add custom course blocks here as the mod grows.
+     *
+     * @param block The block that was hit.
+     * @return Bounciness coefficient.
+     */
+    private static double getBounciness(Block block) {
+        if (block == net.minecraft.world.level.block.Blocks.SLIME_BLOCK)   return 0.95;
+        if (block == net.minecraft.world.level.block.Blocks.HAY_BLOCK)     return 0.20;
+        if (block == net.minecraft.world.level.block.Blocks.STONE
+                || block == net.minecraft.world.level.block.Blocks.STONE_BRICKS)  return 0.60;
+        if (block == net.minecraft.world.level.block.Blocks.GRASS_BLOCK)   return 0.30;
+        if (block == net.minecraft.world.level.block.Blocks.SAND)          return 0.15;
+        if (block == net.minecraft.world.level.block.Blocks.SOUL_SAND)     return 0.05;
+        // Default
+        return 0.40;
     }
 }
