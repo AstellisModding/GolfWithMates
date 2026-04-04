@@ -7,12 +7,13 @@ import net.astellismodding.golfwithmates.component.ModDataComponent;
 import net.astellismodding.golfwithmates.init.ModBlockEntities;
 import net.astellismodding.golfwithmates.sound.ModSounds;
 import net.astellismodding.golfwithmates.util.ClubUtils;
+import net.astellismodding.golfwithmates.util.PathNode;
+import net.astellismodding.golfwithmates.util.ShotResult;
+import net.astellismodding.golfwithmates.util.TrajectoryCalculator;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
@@ -90,35 +91,38 @@ public class GolfBallBlock extends BaseEntityBlock {
         }
         Component input = placer.getDisplayName();
         targetEntity.setCustomName(input);
-        targetEntity.addTargetPosition(pos.getCenter());
+        // Shot result starts empty — will be populated when the ball is hit
     }
 
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
-
-        if (isClub(new ItemStack(player.getMainHandItem().getItem()))){
-            ItemStack club = player.getMainHandItem();
-
-            Vec3 TargetLocation = ClubUtils.calculateHitResultAbsoluteLocation(pos.getX(),pos.getY(),pos.getZ(), player.getYRot(),  club.get(ModDataComponent.put_power).value(), 1);
-            GolfBallBlockEntity golfBall = (GolfBallBlockEntity) level.getBlockEntity(pos);
-            BlockPos TargetBlockPos = new BlockPos((int)TargetLocation.x,(int)TargetLocation.y,(int)TargetLocation.z);
-
-
-            if (!golfBall.isActive()){
-                golfBall.setActive(true);
-            }
-            if (level.isClientSide) {
-                level.playSeededSound(null, pos.getX(), pos.getY(), pos.getZ(), ModSounds.GolfPutt, SoundSource.BLOCKS, 1f, 1f, 0);
-            }
-            level.playSeededSound(null, pos.getX(), pos.getY(), pos.getZ(), ModSounds.GolfPutt, SoundSource.BLOCKS, 1f, 1f, 0);
-            //golfBall = (GolfBallBlockEntity) level.getBlockEntity(pos);
-
-
-
-
-            this.teleport(TargetBlockPos, state, level, pos);
+        if (!isClub(new ItemStack(player.getMainHandItem().getItem()))) {
+            return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
         }
-        return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
+
+        level.playSeededSound(null, pos.getX(), pos.getY(), pos.getZ(), ModSounds.GolfPutt, SoundSource.BLOCKS, 1f, 1f, 0);
+
+        if (!level.isClientSide) {
+            GolfBallBlockEntity golfBall = (GolfBallBlockEntity) level.getBlockEntity(pos);
+            if (golfBall == null) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+
+            ItemStack club = player.getMainHandItem();
+            Vec3 startPos = Vec3.atBottomCenterOf(pos).add(0, 0.25, 0);
+            float yaw = player.getYRot();
+            double speed = ClubUtils.getVelocity(club) * ClubUtils.getMaxDistance(club);
+
+            ShotResult result = TrajectoryCalculator.simulatePutterShot(startPos, yaw, speed, level);
+            golfBall.setShotResult(result);
+            golfBall.setActive(true);
+
+            PathNode restNode = result.getRestNode();
+            if (restNode != null) {
+                BlockPos targetBlockPos = BlockPos.containing(restNode.position);
+                teleportToResult(targetBlockPos, state, level, pos);
+            }
+        }
+
+        return ItemInteractionResult.sidedSuccess(level.isClientSide);
     }
 
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
@@ -126,64 +130,32 @@ public class GolfBallBlock extends BaseEntityBlock {
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
-    private boolean teleport(BlockPos targetBlockPos, BlockState state, Level level, BlockPos pos) {
+    private void teleportToResult(BlockPos targetBlockPos, BlockState state, Level level, BlockPos pos) {
         WorldBorder worldborder = level.getWorldBorder();
-        GolfBallBlockEntity golfBall = (GolfBallBlockEntity) level.getBlockEntity(pos);
+        if (!level.getBlockState(targetBlockPos).isAir() || !worldborder.isWithinBounds(targetBlockPos)) {
+            return;
+        }
 
-        for (int i = 0; i < 1000; ++i) {
-            golfBall.setActive(true); // Start the beam
+        if (level.getBlockEntity(pos) instanceof GolfBallBlockEntity golfBallBE) {
+            golfBallBE.IncrementPuttCounter();
+            CompoundTag nbtData = golfBallBE.saveWithoutMetadata(level.registryAccess());
+            level.setBlock(targetBlockPos, state, 2);
+            if (level.getBlockEntity(targetBlockPos) instanceof GolfBallBlockEntity newGolfBallBE) {
+                nbtData.putInt("x", targetBlockPos.getX());
+                nbtData.putInt("y", targetBlockPos.getY());
+                nbtData.putInt("z", targetBlockPos.getZ());
+                newGolfBallBE.loadWithComponents(nbtData, level.registryAccess());
+                newGolfBallBE.setChanged();
+            }
+            level.removeBlock(pos, false);
+        }
 
-            if (level.getBlockState(targetBlockPos).isAir() && worldborder.isWithinBounds(targetBlockPos)) {
-                golfBall.addTargetPosition(targetBlockPos.getCenter());
-                if (level.isClientSide) {
-                    //client side 4-6 seconds display ?
-                    for (int j = 0; j < 128; ++j) {
-
-                        //unsure
-                        double d0 = level.random.nextDouble();
-
-                        //adding fuzzieness to the particles? dunno what this is
-                        float f = (level.random.nextFloat() - 0.5F) * 0.2F;
-                        float f1 = (level.random.nextFloat() - 0.5F) * 0.2F;
-                        float f2 = (level.random.nextFloat() - 0.5F) * 0.2F;
-
-                        //Particles, getting location and adding the particles
-                        double d1 = Mth.lerp(d0, (double) targetBlockPos.getX(), (double) pos.getX()) + (level.random.nextDouble() - (double) 0.5F) + (double) 0.5F;
-                        double d2 = Mth.lerp(d0, (double) targetBlockPos.getY(), (double) pos.getY()) + level.random.nextDouble() - (double) 0.5F;
-                        double d3 = Mth.lerp(d0, (double) targetBlockPos.getZ(), (double) pos.getZ()) + (level.random.nextDouble() - (double) 0.5F) + (double) 0.5F;
-                        level.addParticle(ParticleTypes.PORTAL, d1, d2, d3, (double) f, (double) f1, (double) f2);
-
-                    }
-                } else {
-                    if (level.getBlockEntity(pos) instanceof GolfBallBlockEntity golfBallBlockEntity) {
-                        golfBallBlockEntity.IncrementPuttCounter();
-                        CompoundTag nbtData = golfBallBlockEntity.saveWithoutMetadata(level.registryAccess());
-                        level.setBlock(targetBlockPos, state, 2);
-                        if (level.getBlockEntity(targetBlockPos) instanceof GolfBallBlockEntity newGolfBallBE) {
-                            nbtData.putInt("x", targetBlockPos.getX());
-                            nbtData.putInt("y", targetBlockPos.getY());
-                            nbtData.putInt("z", targetBlockPos.getZ());
-                            newGolfBallBE.loadWithComponents(nbtData, level.registryAccess());
-                            newGolfBallBE.setChanged();
-                        }
-                        level.removeBlock(pos, false);
-
-                    }
-                }
-                if (CheckHole(targetBlockPos, level)) {
-                    level.playSeededSound(null, pos.getX(), pos.getY(), pos.getZ(), ModSounds.GolfScore, SoundSource.BLOCKS, 1f, 1f, 0);
-                    if (level.getBlockEntity(targetBlockPos) instanceof GolfBallBlockEntity golfBallBlockEntity) {
-                        TransferToCup(golfBallBlockEntity, targetBlockPos, level);
-                    }
-                }
-
-                return true;
-
-            }else{
-                return false;
+        if (CheckHole(targetBlockPos, level)) {
+            level.playSeededSound(null, targetBlockPos.getX(), targetBlockPos.getY(), targetBlockPos.getZ(), ModSounds.GolfScore, SoundSource.BLOCKS, 1f, 1f, 0);
+            if (level.getBlockEntity(targetBlockPos) instanceof GolfBallBlockEntity golfBallBE) {
+                TransferToCup(golfBallBE, targetBlockPos, level);
             }
         }
-        return false;
     }
 
     public void TransferToCup(BlockEntity blockEntity,BlockPos context, Level level) {
