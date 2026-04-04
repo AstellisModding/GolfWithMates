@@ -4,6 +4,8 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.astellismodding.golfwithmates.block.entity.BeamBlockEntity;
 import net.astellismodding.golfwithmates.block.entity.GolfBallBlockEntity;
+import net.astellismodding.golfwithmates.util.PathNode;
+import net.astellismodding.golfwithmates.util.ShotResult;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -40,12 +42,11 @@ public class GolfBallBlockEntityRender implements BlockEntityRenderer<GolfBallBl
     @Override
     public void render(GolfBallBlockEntity pBlockEntity, float pPartialTick, PoseStack pPoseStack, MultiBufferSource pBufferSource, int pPackedLight, int pPackedOverlay) {
 
-        long gameTime = pBlockEntity.getLevel().getGameTime();
+        ShotResult currentShot = pBlockEntity.getShotResult();
         int color = Color.RED.getRGB();
         float beamRadius = 0.05f;
-        Vec3[] targetPositions = pBlockEntity.getPositionsForRendering();
 
-        if (!pBlockEntity.isActive() || targetPositions == null || targetPositions.length == 0) {
+        if (!pBlockEntity.isActive() || currentShot.path.isEmpty()) {
             return;
         }
 
@@ -54,26 +55,21 @@ public class GolfBallBlockEntityRender implements BlockEntityRenderer<GolfBallBl
             return;
         }
 
-        // Get the block's world position as the starting point
         BlockPos blockPos = pBlockEntity.getBlockPos();
-        Vec3 blockWorldPos = Vec3.atCenterOf(blockPos).add(0, 0.5, 0); // Slightly above center
 
-        // Start from the block's world position
-        Vec3 currentWorldPos = targetPositions[0];
+        // Start from the first node and draw segments between consecutive path nodes
+        Vec3 currentWorldPos = currentShot.path.get(0).position;
 
-        // Draw connected lines between all points in sequence
-        for (Vec3 nextWorldPos : targetPositions) {
-            if (nextWorldPos != null) {
-                // Convert world coordinates to relative coordinates for rendering
-                Vec3 startPosRelative = currentWorldPos.subtract(Vec3.atLowerCornerOf(blockPos));
-                Vec3 endPosRelative = nextWorldPos.subtract(Vec3.atLowerCornerOf(blockPos));
+        for (PathNode node : currentShot.path) {
+            Vec3 nextWorldPos = node.position;
+            // Convert world coordinates to relative coordinates for rendering
+            Vec3 startPosRelative = currentWorldPos.subtract(Vec3.atLowerCornerOf(blockPos));
+            Vec3 endPosRelative = nextWorldPos.subtract(Vec3.atLowerCornerOf(blockPos));
 
-                renderBeamBetween(pPoseStack, pBufferSource, pPartialTick, level.getGameTime(),
-                        startPosRelative, endPosRelative, color, beamRadius);
+            renderBeamBetween(pPoseStack, pBufferSource, pPartialTick, level.getGameTime(),
+                    startPosRelative, endPosRelative, color, beamRadius);
 
-                // Move to the next point for the next segment
-                currentWorldPos = nextWorldPos;
-            }
+            currentWorldPos = nextWorldPos;
         }
 
 
@@ -247,12 +243,12 @@ public class GolfBallBlockEntityRender implements BlockEntityRenderer<GolfBallBl
     @Override
     public AABB getRenderBoundingBox(GolfBallBlockEntity blockEntity) {
     // Create bounding box that encompasses all target positions
-        if (!blockEntity.isActive() || blockEntity.getPositionsForRendering() == null) {
+        ShotResult currentShot = blockEntity.getShotResult();
+        if (!blockEntity.isActive() || currentShot.path.isEmpty()) {
             return new AABB(Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY,
                     Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
         }
 
-        Vec3[] positions = blockEntity.getPositionsForRendering();
         BlockPos blockPos = blockEntity.getBlockPos();
         Vec3 blockWorldPos = Vec3.atCenterOf(blockPos);
 
@@ -264,16 +260,15 @@ public class GolfBallBlockEntityRender implements BlockEntityRenderer<GolfBallBl
         double maxY = blockWorldPos.y;
         double maxZ = blockWorldPos.z;
 
-        // Expand to include all target positions
-        for (Vec3 pos : positions) {
-            if (pos != null) {
-                minX = Math.min(minX, pos.x);
-                minY = Math.min(minY, pos.y);
-                minZ = Math.min(minZ, pos.z);
-                maxX = Math.max(maxX, pos.x);
-                maxY = Math.max(maxY, pos.y);
-                maxZ = Math.max(maxZ, pos.z);
-            }
+        // Expand to include all path node positions
+        for (PathNode node : currentShot.path) {
+            Vec3 pos = node.position;
+            minX = Math.min(minX, pos.x);
+            minY = Math.min(minY, pos.y);
+            minZ = Math.min(minZ, pos.z);
+            maxX = Math.max(maxX, pos.x);
+            maxY = Math.max(maxY, pos.y);
+            maxZ = Math.max(maxZ, pos.z);
         }
 
         // Add some padding
