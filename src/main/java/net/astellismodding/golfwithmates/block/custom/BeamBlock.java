@@ -44,10 +44,10 @@ public class BeamBlock extends BaseEntityBlock {
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         ItemStack club = player.getMainHandItem();
 
-        Vec3 TargetLocation = ClubUtils.calculateHitResultAbsoluteLocation(pos.getX(),pos.getY(),pos.getZ(), player.getYRot(),  1, 1);
+        //Vec3 TargetLocation = ClubUtils.calculateHitResultAbsoluteLocation(pos.getX(),pos.getY(),pos.getZ(), player.getYRot(),  1, 1);
         BeamBlockEntity beamBlock = (BeamBlockEntity) level.getBlockEntity(pos);
-        Vec3 translate = new Vec3(0.5,0.5,0.5).add(TargetLocation);
-        beamBlock.addTargetPosition(translate);
+        //Vec3 translate = new Vec3(0.5,0.5,0.5).add(TargetLocation);
+        //beamBlock.addTargetPosition(translate);
 
         if (!beamBlock.isActive()){
             beamBlock.setActive(true);
