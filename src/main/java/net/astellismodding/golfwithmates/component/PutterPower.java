@@ -5,7 +5,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 public record PutterPower(double level) {
     public static final double MAX_POWER = 1;
-    public static final PutterPower DEFAULT = new PutterPower(0);
+    public static final PutterPower DEFAULT = new PutterPower(0.5);
 
     public PutterPower cycle(int direction) {
         double newLevel = 0;
