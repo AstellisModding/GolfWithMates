@@ -22,8 +22,6 @@ public class GolfBallBlockEntity extends BlockEntity {
     private ShotResult currentShot = ShotResult.empty();
     private int animationTick = 0;        // pinned — leave unused for now
     private boolean animationDone = false; // pinned — leave unused for now
-    private int subX = 1; // sub-cell within block, 0–2 (default centre)
-    private int subZ = 1; // sub-cell within block, 0–2 (default centre)
 
     public GolfBallBlockEntity(BlockPos pPos, BlockState pBlockState) {
         super(ModBlockEntities.GOLF_BALL_BE.get(), pPos, pBlockState);
@@ -41,12 +39,6 @@ public class GolfBallBlockEntity extends BlockEntity {
         this.currentShot = result;
         this.animationTick = 0;
         this.animationDone = false;
-        setChangedAndUpdate();
-    }
-
-    public void setSubPos(int x, int z) {
-        this.subX = Math.max(0, Math.min(2, x));
-        this.subZ = Math.max(0, Math.min(2, z));
         setChangedAndUpdate();
     }
     public void setCustomName(Component name) {
@@ -85,8 +77,7 @@ public class GolfBallBlockEntity extends BlockEntity {
     public Component getCustomName() {
         return this.customName;
     }
-    public int getSubX() { return this.subX; }
-    public int getSubZ() { return this.subZ; }
+
 
     public int getPuttCounter() {
         return this.puttCounter;
@@ -99,8 +90,6 @@ public class GolfBallBlockEntity extends BlockEntity {
         tag.putString("CustomName", Component.Serializer.toJson(this.customName, registries));
         tag.putInt("PuttCounter", this.puttCounter);
         tag.putBoolean("isActive", isActive);
-        tag.putByte("SubX", (byte) this.subX);
-        tag.putByte("SubZ", (byte) this.subZ);
 
         if (!currentShot.path.isEmpty()) {
             tag.put("ShotResult", currentShot.toNbt());
@@ -117,8 +106,6 @@ public class GolfBallBlockEntity extends BlockEntity {
             this.puttCounter = tag.getInt("PuttCounter");
         }
         this.isActive = tag.getBoolean("isActive");
-        this.subX = tag.contains("SubX") ? Math.max(0, Math.min(2, tag.getByte("SubX"))) : 1;
-        this.subZ = tag.contains("SubZ") ? Math.max(0, Math.min(2, tag.getByte("SubZ"))) : 1;
 
         if (tag.contains("ShotResult")) {
             this.currentShot = ShotResult.fromNbt(tag.getCompound("ShotResult"));

@@ -23,7 +23,7 @@ public class TrajectoryCalculator {
     // -------------------------------------------------------------------------
 
     /** Sub-block step size. Smaller = more accurate collision, more iterations. 0.25 is a good balance. */
-    private static final double STEP_SIZE = 0.01;
+    private static final double STEP_SIZE = 0.25;
 
     /** Hard cap on iterations — prevents infinite loops on pathological inputs. */
     private static final int MAX_ITERATIONS = 2000;
@@ -92,7 +92,6 @@ public class TrajectoryCalculator {
 
         int iterations   = 0;
         int bounceCount  = 0;
-        int optimizer = 1;
         boolean grounded = false;
 
         while (iterations < MAX_ITERATIONS && vel.length() > PhysicsUtils.STOP_THRESHOLD) {
@@ -123,7 +122,7 @@ public class TrajectoryCalculator {
                 }
 
                 Vec3 surfaceNormal = PhysicsUtils.getBlockFaceNormal(nextPos, nextBlockPos);
-                double bounciness  = 1;  //getBounciness(nextBlock.getBlock());
+                double bounciness  = getBounciness(nextBlock.getBlock());
                 vel = PhysicsUtils.calculateRebound(vel, surfaceNormal, bounciness);
 
                 nodes.add(new PathNode(pos, vel, PathNode.NodeType.BOUNCE));
@@ -139,7 +138,7 @@ public class TrajectoryCalculator {
                 grounded = false;
 
                 // Only record FLIGHT nodes every 4 steps to keep path list lean
-                if (iterations % optimizer == 0) {
+                if (iterations % 4 == 0) {
                     nodes.add(new PathNode(pos, vel, PathNode.NodeType.FLIGHT));
                 }
                 continue;
@@ -151,7 +150,7 @@ public class TrajectoryCalculator {
             vel = PhysicsUtils.applyFriction(vel, belowBlock.getBlock());
 
             // Record a ROLL node every 4 steps
-            if (iterations % optimizer == 0) {
+            if (iterations % 4 == 0) {
                 nodes.add(new PathNode(pos, vel, PathNode.NodeType.ROLL));
             }
         }
