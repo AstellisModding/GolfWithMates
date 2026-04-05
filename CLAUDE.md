@@ -3,7 +3,7 @@
 ## Project Overview
 A Minecraft golf mod built on **NeoForge**, targeting **Minecraft 1.21.x**.
 Players hit a golf ball block using club items, the ball simulates a full physics path
-server-side, stores the result in a BlockEntity, and (eventually) animates along that path client-side.
+server-side, stores the result in a BlockEntity, and animates along that path client-side via a temporary entity.
 
 ## Mod Package
 ```
@@ -23,8 +23,10 @@ net.astellismodding.golfwithmates
 | `TrajectoryCalculator.java` | `util` | Iterative simulation, returns `ShotResult` |
 | `ClubUtils.java` | `util` | Stat lookup only — `isClub`, `getShotType`, `getVelocity`, `getBounciness` |
 | `ShotType.java` | `util` | PUTTER, IRON, WEDGE, DRIVER enum |
-| `GolfBallBlockEntity.java` | `block/entity` | Stores `ShotResult`, puttCounter, isActive, animationTick (pinned) |
-| `GolfBallBlock.java` | `block/custom` | Wires TrajectoryCalculator on swing, teleports ball to REST node |
+| `GolfBallBlockEntity.java` | `block/entity` | Stores `ShotResult`, puttCounter, isActive, sub-cell position, NBT + sync |
+| `GolfBallBlock.java` | `block/custom` | Wires TrajectoryCalculator on swing, spawns GolfBallEntity to animate |
+| `GolfBallEntity.java` | `entity/custom` | Ticks along ShotResult path, places block at REST, handles hole-in |
+| `GolfBallEntityRenderer.java` | `entity/client` | Renders golf ball item at entity's interpolated position |
 
 ### ✅ Complete
 - Sub-block positioning — `subX`/`subZ` (0–2) stored in BlockEntity NBT, used as shot origin and set from `restNode` after simulation
@@ -32,10 +34,12 @@ net.astellismodding.golfwithmates
 ### ✅ Complete
 - Sub-block visual rendering — BER `ItemDisplayContext.NONE` + `translate(0.5 + offsetX, 0.5, 0.5 + offsetZ)`, dynamic VoxelShape from sub-cell
 
+### ✅ Complete
+- Animation system — on swing, block is removed and `GolfBallEntity` spawns; entity ticks along path nodes at `nodesPerTick` speed (targets ~60 ticks); places `GolfBallBlock` at REST when done
+
 ### 🔲 Next to implement (in order)
 1. Hole detection in `TrajectoryCalculator` (currently stubbed `false`)
 2. `ShotType` enum wiring into `simulateParabolicShot` (IRON/DRIVER/WEDGE)
-3. **Animation system** — block→entity→block (see below)
 
 ---
 
@@ -55,7 +59,9 @@ Physics and rendering are fully decoupled.
 | `TrajectoryCalculator` | Orchestrates simulation — calls PhysicsUtils, reads world for collisions, returns `ShotResult` |
 | `PathNode` | Single point in the path — position, velocity, speed, NodeType |
 | `ShotResult` | Full output of one shot — immutable list of PathNodes + metadata |
-| `GolfBallBlockEntity` | Stores `ShotResult`, sub-cell position, animation tick (pinned), NBT + sync |
+| `GolfBallBlockEntity` | Stores `ShotResult`, sub-cell position, NBT + sync. Resting state only — no animation logic. |
+| `GolfBallEntity` | Temporary entity that animates the ball along the path, then converts back to block at REST |
+| `GolfBallEntityRenderer` | Renders golf ball item at entity's interpolated position (`translate(0, 0.5, 0)` + `NONE` context) |
 | `ClubUtils` | Stat lookup only — `isClub()`, `getShotType()`, `getVelocity()`, `getBounciness()` |
 
 ### Shot Types
@@ -120,23 +126,26 @@ itemRenderer.renderStatic(ballStack, ItemDisplayContext.NONE, ...);
 Both the offset and shape use the same sub-cell values, so visual and hitbox stay in sync.
 Upgrading to finer grid in future = change the divisor in both places.
 
-### Animation System (block → entity → block)
+### Animation System (block → entity → block) ✅
 On swing the ball temporarily becomes an entity that lerps along the `ShotResult` path,
 then converts back to a block at the `REST` position. Block handles persistence; entity handles motion.
 
 **Server-side flow:**
 1. Simulate shot → get `ShotResult`
 2. Remove ball block, spawn `GolfBallEntity` at current position with `ShotResult` attached
-3. Entity ticks along path nodes at a fixed rate
-4. On reaching the `REST` node: place `GolfBallBlock` at that position, copy NBT (incl. `subX`/`subZ` computed from `restNode.position`), remove entity
-5. **Fallback**: if chunk unloads mid-animation, entity death handler places the block immediately so the ball is never lost
+3. Entity ticks along path nodes — `nodesPerTick = max(1, path.size() / 60)` targets ~3 sec animation regardless of path density
+4. On reaching `REST`: compute sub-cell from rest position, place `GolfBallBlock`, copy all metadata (name, puttCounter, shotResult, subPos), remove entity
+5. Hole-in check runs in `GolfBallEntity.placeBlock()` — same logic as old `GolfBallBlock.teleportToResult`
+6. **Persistence fallback**: entity saves full state to NBT — if server restarts mid-animation, entity resumes and places the block when it reaches the end
 
 **Client-side:**
-- Entity syncs `ShotResult` via `FriendlyByteBuf` on spawn (data already serialisable — same NBT format)
-- Client lerps smoothly between nodes; `NodeType` drives effects (bounce sound on `BOUNCE`, roll particles on `ROLL`)
-- Server timing and client animation run independently — server places the block after a pre-calculated tick count based on path length
+- `GolfBallEntity` implements `IEntityWithComplexSpawn` — sends `ShotResult` + `nodesPerTick` to client via spawn packet
+- Client entity ticks independently along the same path at the same rate
+- Standard MC entity position interpolation (`xo/yo/zo` → `x/y/z`) gives smooth lerp between nodes within each tick via `partialTick`
 
-**Key constraint:** The `ShotResult` serialisation is already solved (PathNode NBT). The entity just reuses it.
+**Renderer:**
+- `GolfBallEntityRenderer` renders the golf ball item with `translate(0, 0.5, 0)` + `ItemDisplayContext.NONE`
+- Same pattern as the BER — Y=0.5 lift needed because model geometry sits at Y≈0 in block space
 
 ### Simulation Loop (TrajectoryCalculator)
 - **Iterative, not recursive** — old approach was heading toward stack overflow on long shots
@@ -168,9 +177,8 @@ then converts back to a block at the `REST` position. Block handles persistence;
 - Putter uses `calculateFlatLaunchVelocity()` which calls `calculateLaunchVelocity()` with `launchAngle=0`
 
 ### GolfBallBlockEntity
-- `ShotResult currentShot` — full simulation output
+- `ShotResult currentShot` — full simulation output (resting state only — animation is handled by `GolfBallEntity`)
 - `int subX`, `int subZ` — sub-cell position (0–2 each), default `(1, 1)`
-- `int animationTick`, `boolean animationDone` — pinned, leave unused until animation system
 - `isActive` and `puttCounter` stay as-is
 - `setChangedAndUpdate()` pattern used for all state changes that need client sync
 
