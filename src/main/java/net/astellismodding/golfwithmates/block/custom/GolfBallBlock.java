@@ -1,13 +1,10 @@
 package net.astellismodding.golfwithmates.block.custom;
 
 import com.mojang.serialization.MapCodec;
-import net.astellismodding.golfwithmates.block.entity.BeamBlockEntity;
 import net.astellismodding.golfwithmates.block.entity.GolfBallBlockEntity;
-import net.astellismodding.golfwithmates.component.ModDataComponent;
-import net.astellismodding.golfwithmates.init.ModBlockEntities;
+import net.astellismodding.golfwithmates.entity.custom.GolfBallEntity;
 import net.astellismodding.golfwithmates.sound.ModSounds;
 import net.astellismodding.golfwithmates.util.ClubUtils;
-import net.astellismodding.golfwithmates.util.PathNode;
 import net.astellismodding.golfwithmates.util.ShotResult;
 import net.astellismodding.golfwithmates.util.TrajectoryCalculator;
 import net.minecraft.core.BlockPos;
@@ -126,20 +123,15 @@ public class GolfBallBlock extends BaseEntityBlock {
             double speed = ClubUtils.getVelocity(club) * ClubUtils.getMaxDistance(club) * 30;
 
             ShotResult result = TrajectoryCalculator.simulatePutterShot(startPos, yaw, speed, level);
-            golfBall.setShotResult(result);
-            golfBall.setActive(true);
 
-            PathNode restNode = result.getRestNode();
-            if (restNode != null) {
-                // Compute sub-cell from the rest position and store before teleport
-                Vec3 restPos = restNode.position;
-                int newSubX = Math.min(2, (int)((restPos.x - Math.floor(restPos.x)) * 3));
-                int newSubZ = Math.min(2, (int)((restPos.z - Math.floor(restPos.z)) * 3));
-                golfBall.setSubPos(newSubX, newSubZ);
+            // Capture metadata before removing the block
+            int nextPuttCount = golfBall.getPuttCounter() + 1;
 
-                BlockPos targetBlockPos = BlockPos.containing(restNode.position);
-                teleportToResult(targetBlockPos, state, level, pos);
-            }
+            // Spawn entity to animate along the path — it will place the block when done
+            GolfBallEntity ballEntity = GolfBallEntity.create(
+                    level, startPos, result, golfBall.getCustomName(), nextPuttCount);
+            level.addFreshEntity(ballEntity);
+            level.removeBlock(pos, false);
         }
 
         return ItemInteractionResult.sidedSuccess(level.isClientSide);
@@ -195,6 +187,7 @@ public class GolfBallBlock extends BaseEntityBlock {
 
     public boolean CheckHole(BlockPos context, Level level) {
         BlockPos postion = context.below();
+        //todo: Check subspace location, centre requrired
         Block BlockUnderBall = level.getBlockState(postion).getBlock();
         if ( BlockUnderBall instanceof GolfCupBlock ) {
             return true;
