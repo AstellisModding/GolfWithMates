@@ -107,9 +107,14 @@ public class GolfBallBlock extends BaseEntityBlock {
             if (golfBall == null) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 
             ItemStack club = player.getMainHandItem();
-            Vec3 startPos = Vec3.atBottomCenterOf(pos).add(0, 0.25, 0);
+
+            // Use stored sub-cell position as the precise shot origin
+            double startX = pos.getX() + (golfBall.getSubX() + 0.5) / 3.0;
+            double startZ = pos.getZ() + (golfBall.getSubZ() + 0.5) / 3.0;
+            Vec3 startPos = new Vec3(startX, pos.getY() + 0.25, startZ);
+
             float yaw = player.getYRot();
-            double speed = ClubUtils.getVelocity(club) * ClubUtils.getMaxDistance(club);
+            double speed = ClubUtils.getVelocity(club) * ClubUtils.getMaxDistance(club) * 30;
 
             ShotResult result = TrajectoryCalculator.simulatePutterShot(startPos, yaw, speed, level);
             golfBall.setShotResult(result);
@@ -117,6 +122,12 @@ public class GolfBallBlock extends BaseEntityBlock {
 
             PathNode restNode = result.getRestNode();
             if (restNode != null) {
+                // Compute sub-cell from the rest position and store before teleport
+                Vec3 restPos = restNode.position;
+                int newSubX = Math.min(2, (int)((restPos.x - Math.floor(restPos.x)) * 3));
+                int newSubZ = Math.min(2, (int)((restPos.z - Math.floor(restPos.z)) * 3));
+                golfBall.setSubPos(newSubX, newSubZ);
+
                 BlockPos targetBlockPos = BlockPos.containing(restNode.position);
                 teleportToResult(targetBlockPos, state, level, pos);
             }
