@@ -29,7 +29,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.border.WorldBorder;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -42,15 +41,21 @@ import static net.astellismodding.golfwithmates.util.ClubUtils.*;
 public class GolfBallBlock extends BaseEntityBlock {
 
     public static final MapCodec<GolfBallBlock> CODEC = simpleCodec(GolfBallBlock::new);
-    private static final DirectionProperty PuttDirection = null;
-    private static final VoxelShape CustomBoundingBox = Block.box(5, 0, 5, 11,5,11);
-    int blockX = 0;
-    int blockZ = 0;
-    int blockY = 0;
 
-    int OffsetX = 1;
-    int OffsetY = 1;
-    int OffsetZ = 1;
+    // 9 hitbox shapes pre-built at class load — indexed by subZ * 3 + subX
+    private static final VoxelShape[] SUB_CELL_SHAPES = buildSubCellShapes();
+
+    private static VoxelShape[] buildSubCellShapes() {
+        VoxelShape[] shapes = new VoxelShape[9];
+        for (int sz = 0; sz < 3; sz++) {
+            for (int sx = 0; sx < 3; sx++) {
+                double cx = (sx + 0.5) * (16.0 / 3.0);
+                double cz = (sz + 0.5) * (16.0 / 3.0);
+                shapes[sz * 3 + sx] = Block.box(cx - 3, 0, cz - 3, cx + 3, 5, cz + 3);
+            }
+        }
+        return shapes;
+    }
 
     public GolfBallBlock(Properties properties) {
         super(properties);
@@ -69,12 +74,16 @@ public class GolfBallBlock extends BaseEntityBlock {
 
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return CustomBoundingBox;
+        if (level.getBlockEntity(pos) instanceof GolfBallBlockEntity be) {
+            return SUB_CELL_SHAPES[be.getSubZ() * 3 + be.getSubX()];
+        }
+        return SUB_CELL_SHAPES[4]; // default: centre cell (1,1)
     }
 
     @Override
     protected RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        return RenderShape.ENTITYBLOCK_ANIMATED;
+        //return RenderShape.MODEL; results in model staying centred despite subspace location
     }
 
     @Override

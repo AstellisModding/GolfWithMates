@@ -19,6 +19,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -42,6 +44,21 @@ public class GolfBallBlockEntityRender implements BlockEntityRenderer<GolfBallBl
     @Override
     public void render(GolfBallBlockEntity pBlockEntity, float pPartialTick, PoseStack pPoseStack, MultiBufferSource pBufferSource, int pPackedLight, int pPackedOverlay) {
 
+        //Always render the ball model at its sub-cell offset
+        double offsetX = (pBlockEntity.getSubX() - 1) / 3.0;
+        double offsetZ = (pBlockEntity.getSubZ() - 1) / 3.0;
+        ItemStack ballStack = new ItemStack(pBlockEntity.getBlockState().getBlock().asItem());
+        pPoseStack.pushPose();
+        pPoseStack.translate(0.5 + offsetX, 0.5, 0.5 + offsetZ);
+        Minecraft.getInstance().getItemRenderer().renderStatic(
+                ballStack, ItemDisplayContext.NONE,
+                pPackedLight, pPackedOverlay,
+                pPoseStack, pBufferSource,
+                pBlockEntity.getLevel(), 0
+        );
+        pPoseStack.popPose();
+
+        // Path beams and text only when active
         ShotResult currentShot = pBlockEntity.getShotResult();
         int color = Color.RED.getRGB();
         float beamRadius = 0.05f;
@@ -74,13 +91,6 @@ public class GolfBallBlockEntityRender implements BlockEntityRenderer<GolfBallBl
 
 
 
-        BlockState blockState = pBlockEntity.getBlockState();
-        pPoseStack.pushPose();
-        //this.blockRenderer.renderSingleBlock(blockState, pPoseStack, pBufferSource, pPackedLight, pPackedOverlay);
-
-
-        // Pop the pose so the block's transformations don't apply to the text
-        pPoseStack.popPose();
 
         MutableComponent textToDisplay = pBlockEntity.getCustomName().copy()
                 .append(Component.literal(": " + pBlockEntity.getPuttCounter()));
@@ -237,7 +247,7 @@ public class GolfBallBlockEntityRender implements BlockEntityRenderer<GolfBallBl
 
     @Override
     public boolean shouldRender(GolfBallBlockEntity blockEntity, Vec3 cameraPos) {
-        return blockEntity.isActive();
+        return true;
     }
 
     @Override

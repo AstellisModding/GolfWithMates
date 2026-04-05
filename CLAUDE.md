@@ -29,11 +29,13 @@ net.astellismodding.golfwithmates
 ### ✅ Complete
 - Sub-block positioning — `subX`/`subZ` (0–2) stored in BlockEntity NBT, used as shot origin and set from `restNode` after simulation
 
+### ✅ Complete
+- Sub-block visual rendering — BER `ItemDisplayContext.NONE` + `translate(0.5 + offsetX, 0.5, 0.5 + offsetZ)`, dynamic VoxelShape from sub-cell
+
 ### 🔲 Next to implement (in order)
-1. **Sub-block visual rendering** — BER matrix offset + dynamic VoxelShape from sub-cell (see below)
-2. Hole detection in `TrajectoryCalculator` (currently stubbed `false`)
-3. `ShotType` enum wiring into `simulateParabolicShot` (IRON/DRIVER/WEDGE)
-4. **Animation system** — block→entity→block (see below)
+1. Hole detection in `TrajectoryCalculator` (currently stubbed `false`)
+2. `ShotType` enum wiring into `simulateParabolicShot` (IRON/DRIVER/WEDGE)
+3. **Animation system** — block→entity→block (see below)
 
 ---
 
@@ -105,8 +107,9 @@ No model variants, no block state properties, no datagen changes.
 // In GolfBallBlockEntityRender.render()
 double offsetX = (subX - 1) / 3.0; // -0.333, 0, +0.333
 double offsetZ = (subZ - 1) / 3.0;
-poseStack.translate(offsetX, 0, offsetZ);
-// render model normally
+poseStack.translate(0.5 + offsetX, 0.5, 0.5 + offsetZ);
+// ItemDisplayContext.NONE — item centers at origin, +0.5 XYZ puts block bottom on floor
+itemRenderer.renderStatic(ballStack, ItemDisplayContext.NONE, ...);
 ```
 
 **Dynamic VoxelShape** (hitbox):
