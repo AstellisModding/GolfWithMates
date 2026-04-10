@@ -15,14 +15,10 @@ public class ModCreativeModeTabs {
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB, GolfWithMates.MOD_ID);
 
     public static final Supplier<CreativeModeTab> Sonic_Items_Tab = CREATIVE_MODE_TAB.register("golfwithmates_tab",
-            () -> CreativeModeTab.builder().icon(() -> new ItemStack(ModItems.CUP_OF_JOE.get()))
+            () -> CreativeModeTab.builder().icon(() -> new ItemStack(ModItems.GOLF_CLUB_PUTTER.get()))
                     .title(Component.translatable("creativetab.golfwithmates.golfwithmates_items"))
                     .displayItems(((itemDisplayParameters, output) -> {
-                        output.accept(ModItems.CUP_OF_JOE);
-                        //output.accept(ModItems.POLES_BAG);
-                        output.accept(ModBlocks.ASTELLIS_BLOCK);
                         output.accept(ModBlocks.GOLF_FLAG);
-                        //output.accept(ModBlocks.GOLF_HOLE);
                         output.accept(ModBlocks.GOLF_CUP);
                         output.accept(ModBlocks.GOLF_GREENZONE);
                         output.accept(ModBlocks.GOLF_FLAG_POLE);
@@ -31,8 +27,6 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.GOLF_CLUB_IRON);
                         output.accept(ModItems.GOLF_CLUB_WEDGE);
                         output.accept(ModItems.GOLF_CLUB_DRIVER);
-                        //output.accept(ModBlocks.Nameplate_Block);
-                        //output.accept(ModBlocks.Beam_Block);
                     })).build());
 
     public static void register(IEventBus eventBus){

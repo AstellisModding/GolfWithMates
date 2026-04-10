@@ -13,8 +13,5 @@ public class ModItemModelProvider extends ItemModelProvider {
 
     @Override
     protected void registerModels() {
-        basicItem(ModItems.POLES_BAG.get());
-        basicItem(ModItems.CUP_OF_JOE.get());
-
     }
 }

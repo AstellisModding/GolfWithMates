@@ -1,10 +1,8 @@
 package net.astellismodding.golfwithmates.event;
 
 import net.astellismodding.golfwithmates.GolfWithMates;
-import net.astellismodding.golfwithmates.block.entity.renderer.BeamBlockEntityRenderer;
 import net.astellismodding.golfwithmates.block.entity.renderer.GolfBallBlockEntityRender;
 import net.astellismodding.golfwithmates.block.entity.renderer.GolfCupBlockEntityRenderer;
-import net.astellismodding.golfwithmates.block.entity.renderer.NameplateBlockEntityRenderer;
 import net.astellismodding.golfwithmates.entity.ModEntities;
 import net.astellismodding.golfwithmates.entity.client.GolfBallEntityRenderer;
 import net.astellismodding.golfwithmates.init.ModBlockEntities;
@@ -78,14 +76,6 @@ public class ClientEvents {
             event.registerBlockEntityRenderer(
                     ModBlockEntities.GOLF_CLUP_BE.get(),
                     GolfCupBlockEntityRenderer::new
-            );
-            event.registerBlockEntityRenderer(
-                    ModBlockEntities.Nameplate_Block_BE.get(),
-                    NameplateBlockEntityRenderer::new
-            );
-            event.registerBlockEntityRenderer(
-                    ModBlockEntities.Beam_Block_BE.get(),
-                    BeamBlockEntityRenderer::new
             );
             event.registerBlockEntityRenderer(
                     ModBlockEntities.GOLF_BALL_BE.get(),
