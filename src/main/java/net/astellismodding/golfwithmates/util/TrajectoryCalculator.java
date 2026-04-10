@@ -22,11 +22,14 @@ public class TrajectoryCalculator {
     // Constants
     // -------------------------------------------------------------------------
 
-    /** Sub-block step size. Smaller = more accurate collision, more iterations. 0.25 is a good balance. */
-    private static final double STEP_SIZE = 0.01;
+    /** Sub-block step size. Smaller = more accurate collision, more iterations. 0.25 is a good balance.
+     *  this effects animation and distance of shots, keep at 0.1 for now unless for a good reason
+     *  follow up with distance checks and animation quality after editing
+     * */
+    private static final double STEP_SIZE = 0.1;
 
     /** Hard cap on iterations — prevents infinite loops on pathological inputs. */
-    private static final int MAX_ITERATIONS = 2000;
+    private static final int MAX_ITERATIONS = 10000;
 
     /**
      * Max consecutive bounces before we force the ball to rest.
@@ -92,7 +95,7 @@ public class TrajectoryCalculator {
 
         int iterations   = 0;
         int bounceCount  = 0;
-        int optimizer = 1;
+        int optimizer = 4;
         boolean grounded = false;
 
         while (iterations < MAX_ITERATIONS && vel.length() > PhysicsUtils.STOP_THRESHOLD) {
@@ -104,7 +107,7 @@ public class TrajectoryCalculator {
 
             // --- Apply gravity if airborne ---
             if (applyGravity && !grounded) {
-                vel = PhysicsUtils.applyGravity(vel);
+                vel = PhysicsUtils.applyGravity(vel, STEP_SIZE);
             }
 
             // --- Block collision checks ---
@@ -114,41 +117,65 @@ public class TrajectoryCalculator {
             BlockState nextBlock  = world.getBlockState(nextBlockPos);
             BlockState belowBlock = world.getBlockState(belowBlockPos);
 
-            // CASE 1: Solid block directly in the path (side collision)
+            // CASE 1: Solid block in path — distinguish landing from above vs side collision
             if (!nextBlock.isAir() && nextBlock.isSolid()) {
                 if (bounceCount >= MAX_BOUNCES) {
-                    // Too many bounces — force rest at current position
                     nodes.add(new PathNode(pos, Vec3.ZERO, PathNode.NodeType.REST));
                     break;
                 }
 
-                Vec3 surfaceNormal = PhysicsUtils.getBlockFaceNormal(nextPos, nextBlockPos);
-                double bounciness  = 1;  //getBounciness(nextBlock.getBlock());
-                vel = PhysicsUtils.calculateRebound(vel, surfaceNormal, bounciness);
+                boolean landingFromAbove = pos.y >= nextBlockPos.getY() + 1.0;
 
-                nodes.add(new PathNode(pos, vel, PathNode.NodeType.BOUNCE));
-                bounceCount++;
-                grounded = false;
-                // Don't advance pos — recalculate direction from same position
+                if (landingFromAbove) {
+                    // Snap to the top surface — prevents the ball hovering above the floor
+                    double landY = nextBlockPos.getY() + 1.0;
+                    double bounciness = getBounciness(nextBlock.getBlock());
+                    double reboundY   = Math.abs(vel.y) * bounciness;
+
+                    pos = new Vec3(nextPos.x, landY, nextPos.z);
+
+                    if (reboundY > PhysicsUtils.STOP_THRESHOLD) {
+                        vel = new Vec3(vel.x, reboundY, vel.z);
+                        nodes.add(new PathNode(pos, vel, PathNode.NodeType.BOUNCE));
+                        bounceCount++;
+                        grounded = false;
+                    } else {
+                        // Not enough energy to bounce — settle and roll
+                        vel = new Vec3(vel.x, 0, vel.z);
+                        vel = PhysicsUtils.applyFriction(vel, nextBlock.getBlock(), STEP_SIZE);
+                        grounded = true;
+                        if (iterations % optimizer == 0) {
+                            nodes.add(new PathNode(pos, vel, PathNode.NodeType.ROLL));
+                        }
+                    }
+                } else {
+                    // Side collision — rebound off the face
+                    Vec3 surfaceNormal = PhysicsUtils.getBlockFaceNormal(nextPos, nextBlockPos);
+                    double bounciness  = getBounciness(nextBlock.getBlock());
+                    vel = PhysicsUtils.calculateRebound(vel, surfaceNormal, bounciness);
+                    nodes.add(new PathNode(pos, vel, PathNode.NodeType.BOUNCE));
+                    bounceCount++;
+                    grounded = false;
+                    // Don't advance pos — recalculate direction from same position
+                }
                 continue;
             }
 
-            // CASE 2: No floor beneath — ball is airborne (falling or launched)
-            if (belowBlock.isAir() || !belowBlock.isSolid()) {
+            // CASE 2: No floor beneath, OR ball moving upward after a bounce — airborne
+            if (belowBlock.isAir() || !belowBlock.isSolid() || vel.y > PhysicsUtils.STOP_THRESHOLD) {
                 pos = nextPos;
                 grounded = false;
 
-                // Only record FLIGHT nodes every 4 steps to keep path list lean
                 if (iterations % optimizer == 0) {
                     nodes.add(new PathNode(pos, vel, PathNode.NodeType.FLIGHT));
                 }
                 continue;
             }
 
-            // CASE 3: Floor exists — ball is on the ground, apply friction
+            // CASE 3: Floor exists and ball is not rising — rolling, apply friction
             pos = nextPos;
             grounded = true;
-            vel = PhysicsUtils.applyFriction(vel, belowBlock.getBlock());
+            vel = PhysicsUtils.applyFriction(vel, belowBlock.getBlock(), STEP_SIZE);
 
             // Record a ROLL node every 4 steps
             if (iterations % optimizer == 0) {
@@ -161,7 +188,7 @@ public class TrajectoryCalculator {
             nodes.add(new PathNode(pos, Vec3.ZERO, PathNode.NodeType.REST));
         }
 
-        // TODO: hole detection — check if pos is inside a hole block, pass true to reachedHole
+        // TODO: hole detection — roll over hole putts dedtion if requested
         return new ShotResult(nodes, false);
     }
 

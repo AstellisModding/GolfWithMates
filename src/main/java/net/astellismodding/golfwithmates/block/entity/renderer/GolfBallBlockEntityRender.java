@@ -60,7 +60,11 @@ public class GolfBallBlockEntityRender implements BlockEntityRenderer<GolfBallBl
 
         // Path beams and text only when active
         ShotResult currentShot = pBlockEntity.getShotResult();
-        int color = Color.RED.getRGB();
+        int color1 = Color.RED.getRGB();
+        int color2 = Color.BLUE.getRGB();
+        boolean flip = true;
+
+
         float beamRadius = 0.05f;
 
         if (!pBlockEntity.isActive() || currentShot.path.isEmpty()) {
@@ -82,9 +86,16 @@ public class GolfBallBlockEntityRender implements BlockEntityRenderer<GolfBallBl
             // Convert world coordinates to relative coordinates for rendering
             Vec3 startPosRelative = currentWorldPos.subtract(Vec3.atLowerCornerOf(blockPos));
             Vec3 endPosRelative = nextWorldPos.subtract(Vec3.atLowerCornerOf(blockPos));
+            if (flip) {
+                renderBeamBetween(pPoseStack, pBufferSource, pPartialTick, level.getGameTime(),
+                        startPosRelative, endPosRelative, color1, beamRadius);
+                flip = false;
+            }else {
+                renderBeamBetween(pPoseStack, pBufferSource, pPartialTick, level.getGameTime(),
+                        startPosRelative, endPosRelative, color2, beamRadius);
+                flip = true ;
+            }
 
-            renderBeamBetween(pPoseStack, pBufferSource, pPartialTick, level.getGameTime(),
-                    startPosRelative, endPosRelative, color, beamRadius);
 
             currentWorldPos = nextWorldPos;
         }
