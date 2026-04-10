@@ -23,4 +23,4 @@ Use **Scroll + Shift** to adjust power before swinging.
 ## Links
 
 - [Issues](https://github.com/Andrew-Lish/GolfWithMates/issues)
-- Discord: TBD
+- [Discord](https://discord.gg/tJTDVJkVeB)
