@@ -2,7 +2,7 @@
 
 A multiplayer golf mod for Minecraft 1.21.1 on NeoForge.
 
-Place a course, grab a club, and sink the ball. Physics runs server-side and animates client-side — no client mod required for servers.
+Place a course, grab a club, and sink the ball. Physics runs server-side and animates client-side.
 
 ---
 
