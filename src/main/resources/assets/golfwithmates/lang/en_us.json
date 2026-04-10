@@ -26,6 +26,9 @@
   "tooltip.golfwithmates.golf_club_driver.tooltip": "Fly ball fly!",
   "tooltip.golfwithmates.golf_club_wedge.tooltip": "Get yourself out of sticky situations.",
 
+  "command.golfwithmates.beam_on": "Trajectory beam: ON",
+  "command.golfwithmates.beam_off": "Trajectory beam: OFF",
+
   "screen.golfwithmates.golf_cup": "Cup Settings",
   "screen.golfwithmates.course_name": "Course Name",
   "screen.golfwithmates.par": "Par",
