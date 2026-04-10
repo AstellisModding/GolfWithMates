@@ -57,7 +57,8 @@ public class GolfWithMates {
         ModItemDataComponents.register(modEventBus);
 
         // Register our mod's ModConfigSpec so that FML can create and load the config file for us
-        modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+        modContainer.registerConfig(ModConfig.Type.SERVER, Config.Server.SPEC);
+        modContainer.registerConfig(ModConfig.Type.CLIENT, Config.Client.SPEC);
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {

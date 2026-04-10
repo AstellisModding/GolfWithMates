@@ -1,5 +1,6 @@
 package net.astellismodding.golfwithmates.util;
 
+import net.astellismodding.golfwithmates.Config;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -28,14 +29,7 @@ public class TrajectoryCalculator {
      * */
     private static final double STEP_SIZE = 0.1;
 
-    /** Hard cap on iterations — prevents infinite loops on pathological inputs. */
-    private static final int MAX_ITERATIONS = 10000;
-
-    /**
-     * Max consecutive bounces before we force the ball to rest.
-     * Prevents the ball from pinballing forever in a corner.
-     */
-    private static final int MAX_BOUNCES = 16;
+    // MAX_ITERATIONS and MAX_BOUNCES are read from Config.Server at simulation time.
 
     // -------------------------------------------------------------------------
     // Entry points
@@ -98,7 +92,7 @@ public class TrajectoryCalculator {
         int optimizer = 4;
         boolean grounded = false;
 
-        while (iterations < MAX_ITERATIONS && vel.length() > PhysicsUtils.STOP_THRESHOLD) {
+        while (iterations < Config.Server.MAX_ITERATIONS.get() && vel.length() > Config.Server.STOP_THRESHOLD.get()) {
             iterations++;
 
             // --- Compute the next candidate position ---
@@ -119,7 +113,7 @@ public class TrajectoryCalculator {
 
             // CASE 1: Solid block in path — distinguish landing from above vs side collision
             if (!nextBlock.isAir() && nextBlock.isSolid()) {
-                if (bounceCount >= MAX_BOUNCES) {
+                if (bounceCount >= Config.Server.MAX_BOUNCES.get()) {
                     nodes.add(new PathNode(pos, Vec3.ZERO, PathNode.NodeType.REST));
                     break;
                 }
@@ -134,7 +128,7 @@ public class TrajectoryCalculator {
 
                     pos = new Vec3(nextPos.x, landY, nextPos.z);
 
-                    if (reboundY > PhysicsUtils.STOP_THRESHOLD) {
+                    if (reboundY > Config.Server.STOP_THRESHOLD.get()) {
                         vel = new Vec3(vel.x, reboundY, vel.z);
                         nodes.add(new PathNode(pos, vel, PathNode.NodeType.BOUNCE));
                         bounceCount++;
@@ -162,7 +156,7 @@ public class TrajectoryCalculator {
             }
 
             // CASE 2: No floor beneath, OR ball moving upward after a bounce — airborne
-            if (belowBlock.isAir() || !belowBlock.isSolid() || vel.y > PhysicsUtils.STOP_THRESHOLD) {
+            if (belowBlock.isAir() || !belowBlock.isSolid() || vel.y > Config.Server.STOP_THRESHOLD.get()) {
                 pos = nextPos;
                 grounded = false;
 
