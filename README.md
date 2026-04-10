@@ -1,21 +1,11 @@
 # Golf With Mates
 
-A multiplayer golf mod for Minecraft 1.21.1 on NeoForge.
+Minecraft Mod. Feature rich minecraft golfing mod. For survival or creative games.
 
-Place a course, grab a club, and sink the ball. Physics runs server-side and animates client-side — no client mod required for servers.
-
----
-
-## Requirements
-
-- Minecraft 1.21.1
-- [NeoForge](https://neoforged.net/) 21.1.190+
-
-## Install
-
-Drop the `.jar` into your `mods/` folder and launch.
+Place a course, grab a club, and sink the ball. now with ball physics.
 
 ---
+
 
 ## Clubs
 
