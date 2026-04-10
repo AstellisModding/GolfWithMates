@@ -5,6 +5,7 @@ bin
 .metadata
 .classpath
 .project
+eclipse
 
 # idea
 out
@@ -16,11 +17,27 @@ out
 # gradle
 build
 .gradle
+local.properties
+gradle-app.setting
+.gradletasknamecache
 
-# other
-eclipse
+# minecraft / neoforge run dirs
 run
 runs
 run-data
+logs
+crash-reports
 
+# generated assets (datagen output — not needed in source control)
+src/generated/resources/.cache
+
+# os
+.DS_Store
+Thumbs.db
+
+# claude code (local dev context)
+.claude
+
+# misc
 repo
+*.log
