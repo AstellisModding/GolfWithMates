@@ -14,7 +14,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
     @Override
     protected void registerStatesAndModels() {
-        blockWithItem(ModBlocks.ASTELLIS_BLOCK);
         blockWithItem(ModBlocks.GOLF_GREENZONE);
     }
 

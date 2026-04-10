@@ -1,5 +1,7 @@
 package net.astellismodding.golfwithmates.util;
 
+import net.astellismodding.golfwithmates.Config;
+import net.astellismodding.golfwithmates.init.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -16,11 +18,10 @@ public class PhysicsUtils {
     // Constants
     // -------------------------------------------------------------------------
 
-    /** Ball stops when speed drops below this. Avoids infinite decel loops. */
-    public static final double STOP_THRESHOLD = 0.05;
-
-    /** Gravity constant per simulation step (not per tick — applied in TrajectoryCalculator). */
-    public static final double GRAVITY = 0.08;
+    /** @deprecated Read from {@link Config.Server#STOP_THRESHOLD} at runtime. */
+    @Deprecated public static final double STOP_THRESHOLD = 0.05;
+    /** @deprecated Read from {@link Config.Server#GRAVITY} at runtime. */
+    @Deprecated public static final double GRAVITY = 0.08;
 
     /**
      * The STEP_SIZE the friction and gravity constants were tuned for.
@@ -96,13 +97,15 @@ public class PhysicsUtils {
      * @return Friction coefficient for that surface.
      */
     public static double getFrictionCoefficient(Block block) {
-        if (block == Blocks.ICE || block == Blocks.PACKED_ICE || block == Blocks.BLUE_ICE) return 0.98;
-        if (block == Blocks.STONE || block == Blocks.STONE_BRICKS)                          return 0.90;
-        if (block == Blocks.DIRT || block == Blocks.COARSE_DIRT)                            return 0.78;
-        if (block == Blocks.GRASS_BLOCK || block == Blocks.SHORT_GRASS)                     return 0.82;
-        if (block == Blocks.SAND || block == Blocks.GRAVEL)                                 return 0.60;
-        if (block == Blocks.SOUL_SAND)                                                       return 0.40;
-        if (block == Blocks.SLIME_BLOCK)                                                     return 0.50;
+        if (block == Blocks.PACKED_ICE || block == Blocks.BLUE_ICE)                             return 0.99;
+        if (block == Blocks.ICE )                                                               return 0.97;
+        if (block == Blocks.STONE || block == Blocks.STONE_BRICKS)                              return 0.90;
+        if (block == ModBlocks.GOLF_GREENZONE.get())                                            return 0.88;
+        if (block == Blocks.GRASS_BLOCK || block == Blocks.SHORT_GRASS)                         return 0.82;
+        if (block == Blocks.DIRT || block == Blocks.COARSE_DIRT)                                return 0.78;
+        if (block == Blocks.SAND || block == Blocks.GRAVEL)                                     return 0.60;
+        if (block == Blocks.SOUL_SAND)                                                          return 0.40;
+        if (block == Blocks.SLIME_BLOCK)                                                        return 0.50;
         // Default — treat unknown blocks like dirt
         return 0.78;
     }
@@ -141,7 +144,7 @@ public class PhysicsUtils {
      * @return Velocity with gravity applied to Y.
      */
     public static Vec3 applyGravity(Vec3 velocity, double stepSize) {
-        return new Vec3(velocity.x, velocity.y - GRAVITY * (stepSize / REFERENCE_STEP_SIZE), velocity.z);
+        return new Vec3(velocity.x, velocity.y - Config.Server.GRAVITY.get() * (stepSize / REFERENCE_STEP_SIZE), velocity.z);
     }
 
     /**

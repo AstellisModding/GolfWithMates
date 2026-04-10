@@ -1,6 +1,16 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
+    "has_iron_ingot": {
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:iron_ingot"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
     "has_paper": {
       "conditions": {
         "items": [
@@ -13,7 +23,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "golfwithmates:astellis_block"
+        "recipe": "golfwithmates:golf_flag"
       },
       "trigger": "minecraft:recipe_unlocked"
     }
@@ -21,12 +31,13 @@
   "requirements": [
     [
       "has_the_recipe",
+      "has_iron_ingot",
       "has_paper"
     ]
   ],
   "rewards": {
     "recipes": [
-      "golfwithmates:astellis_block"
+      "golfwithmates:golf_flag"
     ]
   }
 }

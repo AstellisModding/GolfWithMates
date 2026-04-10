@@ -1,5 +1,6 @@
 package net.astellismodding.golfwithmates;
 
+import net.astellismodding.golfwithmates.block.entity.renderer.GolfBallBlockEntityRender;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -24,8 +25,6 @@ public class ExampleModClient {
 
     @SubscribeEvent
     static void onClientSetup(FMLClientSetupEvent event) {
-        // Some client setup code
-        GolfWithMates.LOGGER.info("HELLO FROM CLIENT SETUP");
-        GolfWithMates.LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
+        GolfBallBlockEntityRender.showBeam = Config.Client.SHOW_BEAM_BY_DEFAULT.get();
     }
 }

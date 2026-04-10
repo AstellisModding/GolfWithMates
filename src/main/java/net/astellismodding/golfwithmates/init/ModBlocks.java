@@ -21,9 +21,6 @@ public class ModBlocks {
             DeferredRegister.createBlocks(GolfWithMates.MOD_ID);
 
     //BASIC BLOCKS REGISTERED HERE
-    public static final DeferredBlock<Block> ASTELLIS_BLOCK = registerBlock("astellis_block",
-            () -> new DropExperienceBlock(UniformInt.of(2, 4),
-                    BlockBehaviour.Properties.of().strength(3f).sound(SoundType.AMETHYST)));
     public static final DeferredBlock<Block> GOLF_GREENZONE = registerBlock("golf_greenzone",
             () -> new DropExperienceBlock(UniformInt.of(2, 4),
                     BlockBehaviour.Properties.of().strength(3f).sound(SoundType.GRASS)));
@@ -43,13 +40,6 @@ public class ModBlocks {
 
     public static final DeferredBlock<Block> GOLF_CUP = registerBlock("golf_cup",
             () -> new GolfCupBlock(BlockBehaviour.Properties.of().noOcclusion()));
-
-    public static final DeferredBlock<Block> Nameplate_Block = registerBlock("nameplate_block",
-            () -> new NameplateBlock(BlockBehaviour.Properties.of().noOcclusion()));
-
-    public static final DeferredBlock<Block> Beam_Block = registerBlock("beam_block",
-            () -> new BeamBlock(BlockBehaviour.Properties.of().noOcclusion()));
-
 
     private static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<T> block) {
         DeferredBlock<T> toReturn = BLOCKS.register(name, block);
