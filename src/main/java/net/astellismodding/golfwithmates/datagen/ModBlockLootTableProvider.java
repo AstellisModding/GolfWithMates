@@ -35,12 +35,7 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         dropSelf(ModBlocks.GOLF_CUP.get());
         dropSelf(ModBlocks.Nameplate_Block.get());
         dropSelf(ModBlocks.Beam_Block.get());
-        // dropSelf(ModBlocks.MAGIC_BLOCK.get());
 
-        //add(ModBlocks.BISMUTH_ORE.get(),
-        //        block -> createOreDrop(ModBlocks.BISMUTH_ORE.get(), ModItems.RAW_BISMUTH.get()));
-        //add(ModBlocks.BISMUTH_DEEPSLATE_ORE.get(),
-        //        block -> createMultipleOreDrops(ModBlocks.BISMUTH_DEEPSLATE_ORE.get(), ModItems.RAW_BISMUTH.get(), 2, 5));
 
     }
 

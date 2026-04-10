@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": {
+      "item": "minecraft:stick"
+    },
+    "B": {
+      "item": "minecraft:iron_nugget"
+    }
+  },
+  "pattern": [
+    "  A",
+    "BA ",
+    "B  "
+  ],
+  "result": {
+    "count": 1,
+    "id": "golfwithmates:golf_club_wedge"
+  }
+}

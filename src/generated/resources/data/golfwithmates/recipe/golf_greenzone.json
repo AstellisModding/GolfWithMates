@@ -2,17 +2,17 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "B": {
-      "item": "minecraft:paper"
+    "A": {
+      "item": "minecraft:grass_block"
     }
   },
   "pattern": [
     "   ",
-    "B B",
-    " B "
+    " A ",
+    "   "
   ],
   "result": {
     "count": 1,
-    "id": "golfwithmates:astellis_block"
+    "id": "golfwithmates:golf_greenzone"
   }
 }
