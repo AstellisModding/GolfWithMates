@@ -17,7 +17,10 @@ public class ModTags {
     }
 
     public static class Items {
-        public static final TagKey<Item> GOLF_CLUBS = createTag("golf_clubs");
+        public static final TagKey<Item> GOLF_CLUBS        = createTag("golf_clubs");
+        public static final TagKey<Item> GOLF_CLUBS_IRON   = createTag("golf_clubs_iron");
+        public static final TagKey<Item> GOLF_CLUBS_WEDGE  = createTag("golf_clubs_wedge");
+        public static final TagKey<Item> GOLF_CLUBS_DRIVER = createTag("golf_clubs_driver");
 
         private static TagKey<Item> createTag(String name) {
             return ItemTags.create(ResourceLocation.fromNamespaceAndPath(GolfWithMates.MOD_ID, name));

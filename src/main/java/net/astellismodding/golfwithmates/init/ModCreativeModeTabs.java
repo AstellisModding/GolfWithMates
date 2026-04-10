@@ -28,6 +28,9 @@ public class ModCreativeModeTabs {
                         output.accept(ModBlocks.GOLF_FLAG_POLE);
                         output.accept(ModBlocks.GOLF_BALL);
                         output.accept(ModItems.GOLF_CLUB_PUTTER);
+                        output.accept(ModItems.GOLF_CLUB_IRON);
+                        output.accept(ModItems.GOLF_CLUB_WEDGE);
+                        output.accept(ModItems.GOLF_CLUB_DRIVER);
                         //output.accept(ModBlocks.Nameplate_Block);
                         //output.accept(ModBlocks.Beam_Block);
                     })).build());

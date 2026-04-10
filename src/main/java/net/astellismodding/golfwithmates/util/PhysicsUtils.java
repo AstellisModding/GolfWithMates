@@ -22,6 +22,13 @@ public class PhysicsUtils {
     /** Gravity constant per simulation step (not per tick — applied in TrajectoryCalculator). */
     public static final double GRAVITY = 0.08;
 
+    /**
+     * The STEP_SIZE the friction and gravity constants were tuned for.
+     * Changing STEP_SIZE in TrajectoryCalculator without updating this would break physics —
+     * instead, pass the current STEP_SIZE into applyFriction/applyGravity and they scale automatically.
+     */
+    public static final double REFERENCE_STEP_SIZE = 0.25;
+
     // -------------------------------------------------------------------------
     // Rebound / Collision
     // -------------------------------------------------------------------------
@@ -65,17 +72,19 @@ public class PhysicsUtils {
     // -------------------------------------------------------------------------
 
     /**
-     * Applies ground friction to a rolling ball's velocity.
-     * Each step the XZ speed is multiplied by the surface friction coefficient.
-     * Y is untouched — gravity is handled separately in the simulator.
+     * Applies ground friction scaled to the current step size.
+     * Table values are tuned for REFERENCE_STEP_SIZE — passing a different stepSize
+     * ensures the same energy loss per block regardless of simulation resolution.
      *
      * @param velocity     Current velocity.
      * @param surfaceBlock The block the ball is rolling on.
+     * @param stepSize     The simulation step size (STEP_SIZE from TrajectoryCalculator).
      * @return New velocity after friction is applied.
      */
-    public static Vec3 applyFriction(Vec3 velocity, Block surfaceBlock) {
+    public static Vec3 applyFriction(Vec3 velocity, Block surfaceBlock, double stepSize) {
         double friction = getFrictionCoefficient(surfaceBlock);
-        return new Vec3(velocity.x * friction, velocity.y, velocity.z * friction);
+        double scaledFriction = Math.pow(friction, stepSize / REFERENCE_STEP_SIZE);
+        return new Vec3(velocity.x * scaledFriction, velocity.y, velocity.z * scaledFriction);
     }
 
     /**
@@ -120,20 +129,19 @@ public class PhysicsUtils {
 
         double vx = -horizontalSpeed * Math.sin(yawRad);
         double vz =  horizontalSpeed * Math.cos(yawRad);
-        double vy =  verticalSpeed;
 
-        return new Vec3(vx, vy, vz);
+        return new Vec3(vx, verticalSpeed, vz);
     }
 
     /**
-     * Applies one step of gravity to a velocity vector.
-     * Call once per simulation step for airborne balls.
+     * Applies one step of gravity scaled to the current step size.
      *
      * @param velocity Current velocity.
+     * @param stepSize The simulation step size (STEP_SIZE from TrajectoryCalculator).
      * @return Velocity with gravity applied to Y.
      */
-    public static Vec3 applyGravity(Vec3 velocity) {
-        return new Vec3(velocity.x, velocity.y - GRAVITY, velocity.z);
+    public static Vec3 applyGravity(Vec3 velocity, double stepSize) {
+        return new Vec3(velocity.x, velocity.y - GRAVITY * (stepSize / REFERENCE_STEP_SIZE), velocity.z);
     }
 
     /**

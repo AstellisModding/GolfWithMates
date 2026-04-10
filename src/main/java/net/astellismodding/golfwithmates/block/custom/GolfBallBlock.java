@@ -6,9 +6,9 @@ import net.astellismodding.golfwithmates.entity.custom.GolfBallEntity;
 import net.astellismodding.golfwithmates.sound.ModSounds;
 import net.astellismodding.golfwithmates.util.ClubUtils;
 import net.astellismodding.golfwithmates.util.ShotResult;
+import net.astellismodding.golfwithmates.util.ShotType;
 import net.astellismodding.golfwithmates.util.TrajectoryCalculator;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -26,7 +26,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.border.WorldBorder;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -120,9 +119,26 @@ public class GolfBallBlock extends BaseEntityBlock {
             Vec3 startPos = new Vec3(startX, pos.getY() + 0.25, startZ);
 
             float yaw = player.getYRot();
-            double speed = ClubUtils.getVelocity(club) * ClubUtils.getMaxDistance(club) * 30;
+            ShotType shotType = ClubUtils.getShotType(club);
+            double rawPower = ClubUtils.getVelocity(club);
+            float effectiveAngle = ClubUtils.getLaunchAngle(shotType, rawPower);
 
-            ShotResult result = TrajectoryCalculator.simulatePutterShot(startPos, yaw, speed, level);
+            // Compensate speed so horizontal distance stays proportional to power,
+            // not to the shallower angle — cos(fullAngle)/cos(effectiveAngle) < 1
+            // when angle has been reduced, pulling distance back in line.
+            double speed = ClubUtils.applyPowerCurve(rawPower, shotType) * ClubUtils.getMaxDistance(club);
+            if (shotType != ShotType.PUTTER) {
+                float fullAngle = ClubUtils.getLaunchAngle(shotType, 1.0);
+                double compensation = Math.cos(Math.toRadians(fullAngle)) / Math.cos(Math.toRadians(effectiveAngle));
+                speed *= compensation;
+            }
+
+            ShotResult result;
+            if (shotType == ShotType.PUTTER) {
+                result = TrajectoryCalculator.simulatePutterShot(startPos, yaw, speed, level);
+            } else {
+                result = TrajectoryCalculator.simulateParabolicShot(startPos, yaw, speed, effectiveAngle, level);
+            }
 
             // Capture metadata before removing the block
             int nextPuttCount = golfBall.getPuttCounter() + 1;
@@ -142,34 +158,6 @@ public class GolfBallBlock extends BaseEntityBlock {
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
-    private void teleportToResult(BlockPos targetBlockPos, BlockState state, Level level, BlockPos pos) {
-        WorldBorder worldborder = level.getWorldBorder();
-        if (!level.getBlockState(targetBlockPos).isAir() || !worldborder.isWithinBounds(targetBlockPos)) {
-            return;
-        }
-
-        if (level.getBlockEntity(pos) instanceof GolfBallBlockEntity golfBallBE) {
-            golfBallBE.IncrementPuttCounter();
-            CompoundTag nbtData = golfBallBE.saveWithoutMetadata(level.registryAccess());
-            level.setBlock(targetBlockPos, state, 2);
-            if (level.getBlockEntity(targetBlockPos) instanceof GolfBallBlockEntity newGolfBallBE) {
-                nbtData.putInt("x", targetBlockPos.getX());
-                nbtData.putInt("y", targetBlockPos.getY());
-                nbtData.putInt("z", targetBlockPos.getZ());
-                newGolfBallBE.loadWithComponents(nbtData, level.registryAccess());
-                newGolfBallBE.setChanged();
-            }
-            level.removeBlock(pos, false);
-        }
-
-        if (CheckHole(targetBlockPos, level)) {
-            level.playSeededSound(null, targetBlockPos.getX(), targetBlockPos.getY(), targetBlockPos.getZ(), ModSounds.GolfScore, SoundSource.BLOCKS, 1f, 1f, 0);
-            if (level.getBlockEntity(targetBlockPos) instanceof GolfBallBlockEntity golfBallBE) {
-                TransferToCup(golfBallBE, targetBlockPos, level);
-            }
-        }
-    }
-
     public void TransferToCup(BlockEntity blockEntity,BlockPos context, Level level) {
         BlockPos cuppos = context.below();
         Block CupBlock = level.getBlockState(cuppos).getBlock();
@@ -187,7 +175,6 @@ public class GolfBallBlock extends BaseEntityBlock {
 
     public boolean CheckHole(BlockPos context, Level level) {
         BlockPos postion = context.below();
-        //todo: Check subspace location, centre requrired
         Block BlockUnderBall = level.getBlockState(postion).getBlock();
         if ( BlockUnderBall instanceof GolfCupBlock ) {
             return true;

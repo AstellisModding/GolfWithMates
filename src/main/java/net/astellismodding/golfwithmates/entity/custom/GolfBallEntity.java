@@ -1,5 +1,6 @@
 package net.astellismodding.golfwithmates.entity.custom;
 
+import java.util.List;
 import net.astellismodding.golfwithmates.block.custom.GolfBallBlock;
 import net.astellismodding.golfwithmates.block.custom.GolfCupBlock;
 import net.astellismodding.golfwithmates.block.entity.GolfBallBlockEntity;
@@ -24,8 +25,11 @@ import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
 
 public class GolfBallEntity extends Entity implements IEntityWithComplexSpawn {
 
-    /** Target animation duration in ticks (~3 seconds). nodesPerTick is derived from this. */
-    private static final int TARGET_ANIMATION_TICKS = 60;
+    /**
+     * Visual speed in blocks per tick. Keeps animation duration proportional to shot distance
+     * regardless of STEP_SIZE or path density. 0.5 b/t = ~10 blocks/sec at 20 tps.
+     */
+    private static final double VISUAL_SPEED_BLOCKS_PER_TICK = 0.25;
 
     private ShotResult shotResult = ShotResult.empty();
     private int pathIndex = 0;
@@ -49,8 +53,20 @@ public class GolfBallEntity extends Entity implements IEntityWithComplexSpawn {
         entity.shotResult = shot;
         entity.customName = name;
         entity.puttCounter = putts;
-        entity.nodesPerTick = Math.max(1, shot.path.size() / TARGET_ANIMATION_TICKS);
+        entity.nodesPerTick = computeNodesPerTick(shot);
         return entity;
+    }
+
+    private static int computeNodesPerTick(ShotResult shot) {
+        List<PathNode> path = shot.path;
+        if (path.size() < 2) return 1;
+        double totalDist = 0;
+        for (int i = 1; i < path.size(); i++) {
+            totalDist += path.get(i).position.distanceTo(path.get(i - 1).position);
+        }
+        double avgNodeSpacing = totalDist / (path.size() - 1);
+        if (avgNodeSpacing < 1e-6) return 1;
+        return Math.max(1, (int) (VISUAL_SPEED_BLOCKS_PER_TICK / avgNodeSpacing));
     }
 
     // -------------------------------------------------------------------------
@@ -76,6 +92,26 @@ public class GolfBallEntity extends Entity implements IEntityWithComplexSpawn {
     }
 
     /**
+     * Finds the nearest valid resting position at or below startPos.
+     * Scans downward up to 16 blocks to find a position that is air with a solid block beneath it.
+     * Returns startPos unchanged if no better position is found (e.g. over the void).
+     */
+    private BlockPos findGroundedPos(ServerLevel level, BlockPos startPos) {
+        if (isValidRestPos(level, startPos)) return startPos;
+        for (int dy = 1; dy <= 16; dy++) {
+            BlockPos candidate = startPos.below(dy);
+            if (isValidRestPos(level, candidate)) return candidate;
+            if (!level.getBlockState(candidate).isAir()) break; // hit a solid block mid-scan
+        }
+        return startPos;
+    }
+
+    private boolean isValidRestPos(ServerLevel level, BlockPos pos) {
+        return level.getBlockState(pos).isAir()
+                && !level.getBlockState(pos.below()).isAir();
+    }
+
+    /**
      * Called on the server when the entity reaches the end of the path.
      * Places the GolfBallBlock at the REST position and restores all metadata.
      * Also checks for hole-in.
@@ -85,7 +121,7 @@ public class GolfBallEntity extends Entity implements IEntityWithComplexSpawn {
         if (restNode == null || !(level() instanceof ServerLevel serverLevel)) return;
 
         Vec3 restPos = restNode.position;
-        BlockPos targetPos = BlockPos.containing(restPos);
+        BlockPos targetPos = findGroundedPos(serverLevel, BlockPos.containing(restPos));
 
         if (!serverLevel.getBlockState(targetPos).isAir()) return;
         if (!serverLevel.getWorldBorder().isWithinBounds(targetPos)) return;
