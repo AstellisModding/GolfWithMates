@@ -20,7 +20,14 @@ public class ModItemTagProvider extends ItemTagsProvider {
 
     @Override
     protected void addTags(HolderLookup.Provider provider) {
+        tag(ModTags.Items.GOLF_CLUBS_IRON)  .add(ModItems.GOLF_CLUB_IRON.get());
+        tag(ModTags.Items.GOLF_CLUBS_WEDGE) .add(ModItems.GOLF_CLUB_WEDGE.get());
+        tag(ModTags.Items.GOLF_CLUBS_DRIVER).add(ModItems.GOLF_CLUB_DRIVER.get());
+
         tag(ModTags.Items.GOLF_CLUBS)
-                .add(ModItems.GOLF_CLUB_PUTTER.get());
+                .add(ModItems.GOLF_CLUB_PUTTER.get())
+                .addTag(ModTags.Items.GOLF_CLUBS_IRON)
+                .addTag(ModTags.Items.GOLF_CLUBS_WEDGE)
+                .addTag(ModTags.Items.GOLF_CLUBS_DRIVER);
     }
 }

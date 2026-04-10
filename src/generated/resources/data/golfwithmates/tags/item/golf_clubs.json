@@ -1,5 +1,8 @@
 {
   "values": [
-    "golfwithmates:golf_club_putter"
+    "golfwithmates:golf_club_putter",
+    "#golfwithmates:golf_clubs_iron",
+    "#golfwithmates:golf_clubs_wedge",
+    "#golfwithmates:golf_clubs_driver"
   ]
 }

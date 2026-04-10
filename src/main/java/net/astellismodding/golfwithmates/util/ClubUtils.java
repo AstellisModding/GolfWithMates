@@ -11,13 +11,39 @@ public class ClubUtils {
     }
 
     /**
-     * Returns the ShotType for a given club item.
-     * Wire this to item tags or NBT data as club items are created.
+     * Returns the ShotType for a given club item based on its item tag.
+     * Falls back to PUTTER for unknown clubs.
      */
     public static ShotType getShotType(ItemStack item) {
-        // TODO: check item tags to determine club type
-        // Placeholder — default to PUTTER until items are created
+        if (item.is(ModTags.Items.GOLF_CLUBS_DRIVER)) return ShotType.DRIVER;
+        if (item.is(ModTags.Items.GOLF_CLUBS_WEDGE))  return ShotType.WEDGE;
+        if (item.is(ModTags.Items.GOLF_CLUBS_IRON))   return ShotType.IRON;
         return ShotType.PUTTER;
+    }
+
+    /**
+     * Returns the effective vertical launch angle in degrees, scaled by raw power.
+     * At 0% power the angle is at its per-club floor; at 100% it is the full loft.
+     * This prevents low-power shots from launching as steeply as a full swing.
+     *
+     * @param type     Club shot type.
+     * @param rawPower 0.0–1.0 raw power before the curve is applied.
+     * @return Effective launch angle in degrees.
+     */
+    public static float getLaunchAngle(ShotType type, double rawPower) {
+        float max = switch (type) {
+            case DRIVER -> 12.0f;
+            case IRON   -> 20.0f;
+            case WEDGE  -> 45.0f;
+            case PUTTER ->  0.0f;
+        };
+        float min = switch (type) {
+            case DRIVER -> 12.0f;
+            case IRON   -> 20.0f;
+            case WEDGE  -> 45.0f;
+            case PUTTER ->  0.0f;
+        };
+        return min + (max - min) * (float) rawPower;
     }
 
     /**
@@ -27,6 +53,22 @@ public class ClubUtils {
     public static double getVelocity(ItemStack item) {
         PutterPower power = item.getOrDefault(ModDataComponent.put_power, PutterPower.DEFAULT);
         return power.value();
+    }
+
+    /**
+     * Applies a power curve to raw power input (0.0–1.0) based on club type.
+     *
+     * Putter: linear — precise 1:1 control.
+     * All others: logarithmic — punchy at low power, diminishing returns near max.
+     * Uses ln(1 + power*(e−1)) which maps 0→0 and 1→1, so max distance is unchanged.
+     *
+     * @param rawPower 0.0–1.0 from the PutterPower component.
+     * @param type     Club shot type.
+     * @return Curved power, still in 0.0–1.0 range.
+     */
+    public static double applyPowerCurve(double rawPower, ShotType type) {
+        if (type == ShotType.PUTTER) return rawPower;
+        return Math.log1p(rawPower * (Math.E - 1.0));
     }
 
     /**
@@ -51,9 +93,9 @@ public class ClubUtils {
     public static double getMaxDistance(ItemStack item) {
         return switch (getShotType(item)) {
             case PUTTER -> 6.0;
-            case IRON   -> 22.0;
-            case WEDGE  -> 11.0;
-            case DRIVER -> 43.0;
+            case IRON   -> 8.0;
+            case WEDGE  -> 4.0;
+            case DRIVER -> 12.0;
         };
     }
 }
