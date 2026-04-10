@@ -6,12 +6,13 @@ import net.astellismodding.golfwithmates.block.entity.GolfBallBlockEntity;
 import net.astellismodding.golfwithmates.block.entity.GolfCupBlockEntity;
 import net.astellismodding.golfwithmates.init.ModBlockEntities;
 import net.astellismodding.golfwithmates.init.ModBlocks;
-import net.minecraft.client.Minecraft;
+import net.astellismodding.golfwithmates.network.OpenCupScreenPayload;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -31,7 +32,7 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -50,7 +51,8 @@ public class GolfCupBlock extends BaseEntityBlock {
 
     @Override
     protected RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        // BER handles all rendering so it can swap in the disguise block model dynamically
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     @Override
@@ -69,36 +71,58 @@ public class GolfCupBlock extends BaseEntityBlock {
         super.onRemove(state, level, pos, newState, movedByPiston);
     }
 
-    public boolean InsertBall(BlockEntity blockEntity, ItemStack stack, BlockPos pos,Level level) {
-        Boolean Result = false;
+    public boolean InsertBall(BlockEntity blockEntity, ItemStack stack, BlockPos pos, Level level) {
+        boolean result = false;
         if (level.getBlockEntity(pos.below()) instanceof GolfCupBlockEntity golfCupBlockEntity) {
             if (golfCupBlockEntity.inventory.getStackInSlot(0).isEmpty()) {
                 golfCupBlockEntity.inventory.insertItem(0, stack.copy(), false);
-                Result = true;
+                result = true;
             }
         }
-        DisplayWin(((GolfBallBlockEntity) blockEntity).getPuttCounter(),pos, level);
-        return Result;
+        GolfBallBlockEntity ball = (GolfBallBlockEntity) blockEntity;
+        displayWin(ball.getPuttCounter(), ball.getCustomName(), pos, level);
+        return result;
     }
 
-    private void DisplayWin(int puttCounter, BlockPos pos, Level level) {
-        // The entity spawning logic now runs on the server, so we don't need to call it from the client.
-        if (level.isClientSide()) {
-            return;
+    private void displayWin(int strokes, Component playerName, BlockPos pos, Level level) {
+        if (level.isClientSide() || !(level instanceof ServerLevel serverLevel)) return;
+
+        if (!(level.getBlockEntity(pos.below()) instanceof GolfCupBlockEntity golfCup)) return;
+
+        int par = golfCup.getGolfPar();
+
+        // Fireworks
+        if (strokes == 1 || strokes <= par) {
+            int count = strokes == 1 ? 5 : 2;
+            int delay = strokes == 1 ? 20 : 10;
+            golfCup.startCelebration(count, delay);
         }
 
-        if (level.getBlockEntity(pos.below()) instanceof GolfCupBlockEntity golfCup) {
-            Integer par = golfCup.getGolfPar();
-
-            if (par != null) {
-                if (puttCounter == 1) {
-
-                    golfCup.startCelebration(5, 20);
-                } else if (puttCounter <= par) {
-                    golfCup.startCelebration(2, 10);
-                }
-            }
+        // Score label
+        String label;
+        if (strokes == 1) {
+            label = "Hole-in-one!";
+        } else {
+            int diff = strokes - par;
+            label = switch (diff) {
+                case -2 -> "Eagle!";
+                case -1 -> "Birdie!";
+                case  0 -> "Par";
+                case  1 -> "Bogey";
+                case  2 -> "Double Bogey";
+                default -> diff > 0 ? "+" + diff : String.valueOf(diff);
+            };
         }
+
+        // Build message: "PlayerName — Birdie! at The Links (2 strokes, par 3)"
+        String course = golfCup.getCourseName();
+        String courseText = course.isEmpty() ? "" : " at " + course;
+        String strokeWord = strokes == 1 ? "stroke" : "strokes";
+        Component message = Component.literal(
+                playerName.getString() + " — " + label + courseText
+                + " (" + strokes + " " + strokeWord + ", par " + par + ")");
+
+        serverLevel.getServer().getPlayerList().broadcastSystemMessage(message, false);
     }
 
     @Nullable
@@ -115,6 +139,26 @@ public class GolfCupBlock extends BaseEntityBlock {
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
                                               Player player, InteractionHand hand, BlockHitResult hitResult) {
+
+        // Shift + right-click — open settings GUI
+        if (player.isShiftKeyDown()) {
+            if (!level.isClientSide() && player instanceof ServerPlayer sp
+                    && level.getBlockEntity(pos) instanceof GolfCupBlockEntity be) {
+                PacketDistributor.sendToPlayer(sp,
+                        new OpenCupScreenPayload(pos, be.getCourseName(), be.getGolfPar(), be.getDisguiseBlock()));
+            }
+            return ItemInteractionResult.sidedSuccess(level.isClientSide());
+        }
+
+        // Right-click with block item — set as disguise
+        if (stack.getItem() instanceof BlockItem bi) {
+            if (!level.isClientSide() && level.getBlockEntity(pos) instanceof GolfCupBlockEntity be) {
+                be.setDisguiseBlock(BuiltInRegistries.BLOCK.getKey(bi.getBlock()).toString());
+                player.displayClientMessage(
+                        Component.literal("Disguise set: " + bi.getBlock().getName().getString()), true);
+            }
+            return ItemInteractionResult.sidedSuccess(level.isClientSide());
+        }
 
         GolfCupBlockEntity targetEntity = (GolfCupBlockEntity) level.getBlockEntity(pos);
 

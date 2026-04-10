@@ -1,7 +1,9 @@
 package net.astellismodding.golfwithmates.init;
 
 import net.astellismodding.golfwithmates.GolfWithMates;
+import net.astellismodding.golfwithmates.network.OpenCupScreenPayload;
 import net.astellismodding.golfwithmates.network.PuttPowerPayload;
+import net.astellismodding.golfwithmates.network.SetCupDataPayload;
 import net.astellismodding.golfwithmates.network.StrokePowerPayload;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
@@ -16,5 +18,7 @@ public class ModPayloads {
         final PayloadRegistrar registrar = event.registrar(GolfWithMates.MOD_ID);
         registrar.playToServer(PuttPowerPayload.TYPE, PuttPowerPayload.STREAM_CODEC, PuttPowerPayload::handlePayload);
         registrar.playToServer(StrokePowerPayload.TYPE, StrokePowerPayload.STREAM_CODEC, StrokePowerPayload::handlePayload);
+        registrar.playToServer(SetCupDataPayload.TYPE, SetCupDataPayload.STREAM_CODEC, SetCupDataPayload::handlePayload);
+        registrar.playToClient(OpenCupScreenPayload.TYPE, OpenCupScreenPayload.STREAM_CODEC, OpenCupScreenPayload::handlePayload);
     }
 }

@@ -26,6 +26,8 @@ import java.util.List;
 
 public class GolfCupBlockEntity extends BlockEntity {
     private int GolfPar = 3;
+    private String courseName = "";
+    private String disguiseBlock = ""; // registry name e.g. "minecraft:grass_block", empty = no disguise
 
     private int celebrationTicks = 0;
     private int fireworksLaunched = 0;
@@ -113,6 +115,26 @@ public class GolfCupBlockEntity extends BlockEntity {
         return this.GolfPar;
     }
 
+    public void setCourseName(String name) {
+        this.courseName = name == null ? "" : name;
+        setChanged();
+        if (level != null) level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
+    }
+
+    public String getCourseName() {
+        return this.courseName;
+    }
+
+    public void setDisguiseBlock(String registryName) {
+        this.disguiseBlock = registryName == null ? "" : registryName;
+        setChanged();
+        if (level != null) level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
+    }
+
+    public String getDisguiseBlock() {
+        return this.disguiseBlock;
+    }
+
 
 
     private float rotation;
@@ -148,6 +170,8 @@ public class GolfCupBlockEntity extends BlockEntity {
         super.saveAdditional(tag, registries);
         tag.put("inventory", inventory.serializeNBT(registries));
         tag.putInt("GolfPar", this.GolfPar);
+        tag.putString("CourseName", this.courseName);
+        tag.putString("DisguiseBlock", this.disguiseBlock);
     }
 
     @Override
@@ -157,6 +181,8 @@ public class GolfCupBlockEntity extends BlockEntity {
         if (tag.contains("GolfPar")) {
             this.GolfPar = tag.getInt("GolfPar");
         }
+        this.courseName    = tag.contains("CourseName")    ? tag.getString("CourseName")    : "";
+        this.disguiseBlock = tag.contains("DisguiseBlock") ? tag.getString("DisguiseBlock") : "";
     }
 
     @Nullable
