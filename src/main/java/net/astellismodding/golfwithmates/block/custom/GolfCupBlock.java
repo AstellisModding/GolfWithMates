@@ -151,11 +151,11 @@ public class GolfCupBlock extends BaseEntityBlock {
         }
 
         // Right-click with block item — set as disguise
-        if (stack.getItem() instanceof BlockItem bi) {
+        if (stack.getItem() instanceof BlockItem bi && (!bi.getBlock().asItem().equals(ModBlocks.GOLF_BALL.get().asItem()))) {
             if (!level.isClientSide() && level.getBlockEntity(pos) instanceof GolfCupBlockEntity be) {
-                be.setDisguiseBlock(BuiltInRegistries.BLOCK.getKey(bi.getBlock()).toString());
-                player.displayClientMessage(
-                        Component.literal("Disguise set: " + bi.getBlock().getName().getString()), true);
+                    be.setDisguiseBlock(BuiltInRegistries.BLOCK.getKey(bi.getBlock()).toString());
+                    player.displayClientMessage(
+                            Component.literal("Disguise set: " + bi.getBlock().getName().getString()), true);
             }
             return ItemInteractionResult.sidedSuccess(level.isClientSide());
         }

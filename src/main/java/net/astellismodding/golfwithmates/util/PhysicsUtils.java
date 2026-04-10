@@ -1,5 +1,6 @@
 package net.astellismodding.golfwithmates.util;
 
+import net.astellismodding.golfwithmates.init.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -96,13 +97,15 @@ public class PhysicsUtils {
      * @return Friction coefficient for that surface.
      */
     public static double getFrictionCoefficient(Block block) {
-        if (block == Blocks.ICE || block == Blocks.PACKED_ICE || block == Blocks.BLUE_ICE) return 0.98;
-        if (block == Blocks.STONE || block == Blocks.STONE_BRICKS)                          return 0.90;
-        if (block == Blocks.DIRT || block == Blocks.COARSE_DIRT)                            return 0.78;
-        if (block == Blocks.GRASS_BLOCK || block == Blocks.SHORT_GRASS)                     return 0.82;
-        if (block == Blocks.SAND || block == Blocks.GRAVEL)                                 return 0.60;
-        if (block == Blocks.SOUL_SAND)                                                       return 0.40;
-        if (block == Blocks.SLIME_BLOCK)                                                     return 0.50;
+        if (block == Blocks.PACKED_ICE || block == Blocks.BLUE_ICE)                             return 0.99;
+        if (block == Blocks.ICE )                                                               return 0.97;
+        if (block == Blocks.STONE || block == Blocks.STONE_BRICKS)                              return 0.90;
+        if (block == ModBlocks.GOLF_GREENZONE.get())                                            return 0.88;
+        if (block == Blocks.GRASS_BLOCK || block == Blocks.SHORT_GRASS)                         return 0.82;
+        if (block == Blocks.DIRT || block == Blocks.COARSE_DIRT)                                return 0.78;
+        if (block == Blocks.SAND || block == Blocks.GRAVEL)                                     return 0.60;
+        if (block == Blocks.SOUL_SAND)                                                          return 0.40;
+        if (block == Blocks.SLIME_BLOCK)                                                        return 0.50;
         // Default — treat unknown blocks like dirt
         return 0.78;
     }
