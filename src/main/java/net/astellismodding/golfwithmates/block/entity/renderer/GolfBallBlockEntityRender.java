@@ -2,7 +2,6 @@ package net.astellismodding.golfwithmates.block.entity.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.astellismodding.golfwithmates.block.entity.BeamBlockEntity;
 import net.astellismodding.golfwithmates.block.entity.GolfBallBlockEntity;
 import net.astellismodding.golfwithmates.util.PathNode;
 import net.astellismodding.golfwithmates.util.ShotResult;
@@ -32,6 +31,8 @@ import org.joml.Quaternionf;
 import java.awt.*;
 
 public class GolfBallBlockEntityRender implements BlockEntityRenderer<GolfBallBlockEntity> {
+    public static boolean showBeam = false;
+
     private final Font font;
     private final BlockRenderDispatcher blockRenderer;
     private static final ResourceLocation BEAM_TEXTURE = ResourceLocation.withDefaultNamespace("textures/entity/beacon_beam.png");
@@ -78,30 +79,27 @@ public class GolfBallBlockEntityRender implements BlockEntityRenderer<GolfBallBl
 
         BlockPos blockPos = pBlockEntity.getBlockPos();
 
-        // Start from the first node and draw segments between consecutive path nodes
-        Vec3 currentWorldPos = currentShot.path.get(0).position;
+        if (showBeam) {
+            // Start from the first node and draw segments between consecutive path nodes
+            Vec3 currentWorldPos = currentShot.path.get(0).position;
 
-        for (PathNode node : currentShot.path) {
-            Vec3 nextWorldPos = node.position;
-            // Convert world coordinates to relative coordinates for rendering
-            Vec3 startPosRelative = currentWorldPos.subtract(Vec3.atLowerCornerOf(blockPos));
-            Vec3 endPosRelative = nextWorldPos.subtract(Vec3.atLowerCornerOf(blockPos));
-            if (flip) {
-                renderBeamBetween(pPoseStack, pBufferSource, pPartialTick, level.getGameTime(),
-                        startPosRelative, endPosRelative, color1, beamRadius);
-                flip = false;
-            }else {
-                renderBeamBetween(pPoseStack, pBufferSource, pPartialTick, level.getGameTime(),
-                        startPosRelative, endPosRelative, color2, beamRadius);
-                flip = true ;
+            for (PathNode node : currentShot.path) {
+                Vec3 nextWorldPos = node.position;
+                // Convert world coordinates to relative coordinates for rendering
+                Vec3 startPosRelative = currentWorldPos.subtract(Vec3.atLowerCornerOf(blockPos));
+                Vec3 endPosRelative = nextWorldPos.subtract(Vec3.atLowerCornerOf(blockPos));
+                if (flip) {
+                    renderBeamBetween(pPoseStack, pBufferSource, pPartialTick, level.getGameTime(),
+                            startPosRelative, endPosRelative, color1, beamRadius);
+                    flip = false;
+                } else {
+                    renderBeamBetween(pPoseStack, pBufferSource, pPartialTick, level.getGameTime(),
+                            startPosRelative, endPosRelative, color2, beamRadius);
+                    flip = true;
+                }
+                currentWorldPos = nextWorldPos;
             }
-
-
-            currentWorldPos = nextWorldPos;
         }
-
-
-
 
         MutableComponent textToDisplay = pBlockEntity.getCustomName().copy()
                 .append(Component.literal(": " + pBlockEntity.getPuttCounter()));

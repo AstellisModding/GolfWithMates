@@ -1,13 +1,10 @@
 {
-  "item.golfwithmates.poles_bag": "Poles Bag",
-  "item.golfwithmates.cup_of_joe": "Cup Of Joe",
   "item.golfwithmates.golf_club_putter": "Putter Club",
   "item.golfwithmates.golf_club_iron": "Iron Club",
   "item.golfwithmates.golf_club_wedge": "Wedge Club",
   "item.golfwithmates.golf_club_driver": "Driver Club",
 
 
-  "block.golfwithmates.astellis_block": "Astellis's Block",
   "block.golfwithmates.golf_greenzone": "Golf Green Zone",
   "block.golfwithmates.golf_ball": "Golf Ball",
   "block.golfwithmates.golf_flag": "Golf Flag",
@@ -28,6 +25,9 @@
   "tooltip.golfwithmates.golf_club_iron.tooltip": "Wheres the green anyway?.",
   "tooltip.golfwithmates.golf_club_driver.tooltip": "Fly ball fly!",
   "tooltip.golfwithmates.golf_club_wedge.tooltip": "Get yourself out of sticky situations.",
+
+  "command.golfwithmates.beam_on": "Trajectory beam: ON",
+  "command.golfwithmates.beam_off": "Trajectory beam: OFF",
 
   "screen.golfwithmates.golf_cup": "Cup Settings",
   "screen.golfwithmates.course_name": "Course Name",
